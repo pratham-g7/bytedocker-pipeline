@@ -1,0 +1,29 @@
+<div class="card">
+  <div class="mb-3 flex items-center justify-between">
+    <h2 class="text-sm font-semibold">{{ job.filename }}</h2>
+    <span class="rounded px-2 py-0.5 text-xs
+      {% if job.status == 'done' %}bg-emerald-100 text-emerald-700
+      {% elif job.status == 'failed' %}bg-red-100 text-red-700
+      {% else %}bg-sky-100 text-sky-700{% endif %}">
+      {{ job.get_status_display }}{% if job.status == "running" %}…{% endif %}
+    </span>
+  </div>
+  <dl class="grid grid-cols-2 gap-2 text-sm">
+    <dt class="text-slate-500">Contacts created</dt><dd>{{ job.created_contacts }}</dd>
+    <dt class="text-slate-500">Contacts updated</dt><dd>{{ job.updated_contacts }}</dd>
+    <dt class="text-slate-500">Companies created</dt><dd>{{ job.created_companies }}</dd>
+    <dt class="text-slate-500">Skipped (no change)</dt><dd>{{ job.skipped }}</dd>
+    <dt class="text-slate-500">Errors</dt>
+    <dd>
+      {{ job.errored }}
+      {% if job.errors_csv %}
+        · <a class="text-sky-600 hover:underline" href="{% url 'import-errors' job.pk %}">download errors.csv</a>
+      {% endif %}
+    </dd>
+  </dl>
+  {% if job.status == "done" %}
+  <a href="{% url 'contacts' %}" class="mt-4 inline-block text-sm text-sky-600 hover:underline">
+    View contacts →
+  </a>
+  {% endif %}
+</div>

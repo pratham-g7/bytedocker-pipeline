@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block page_title %}Import — {{ job.filename }}{% endblock %}
+{% block content %}
+<div class="max-w-xl" id="job-status"
+     {% if job.status == "running" or job.status == "mapping" %}
+     hx-get="{% url 'import-detail' job.pk %}" hx-trigger="every 2s" hx-target="this" hx-swap="innerHTML"
+     {% endif %}>
+  {% include "ingestion/_job_status.html" %}
+</div>
+{% endblock %}

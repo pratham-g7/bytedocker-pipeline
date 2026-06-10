@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block page_title %}Map columns — {{ job.filename }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl">
+  {% if map_error %}<p class="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ map_error }}</p>{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="card mb-4 overflow-x-auto p-0">
+      <table class="w-full">
+        <thead class="bg-slate-50">
+          <tr>{% for col in columns %}<th class="th">{{ col.header }}</th>{% endfor %}</tr>
+          <tr>
+            {% for col in columns %}
+            <th class="px-3 pb-2">
+              <select name="col_{{ col.index }}" class="input">
+                <option value="">— ignore —</option>
+                {% for value, label in targets.items %}
+                  <option value="{{ value }}" {% if col.guess == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for row in preview %}
+          <tr>{% for cell in row %}<td class="td text-slate-500">{{ cell|truncatechars:30 }}</td>{% endfor %}</tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="flex items-center justify-between">
+      <p class="text-sm text-slate-500">
+        Dedupe: existing emails get blank fields filled, never overwritten. Re-imports are idempotent.
+      </p>
+      <button class="btn-primary">Run import</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

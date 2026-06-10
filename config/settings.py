@@ -104,6 +104,8 @@ REDIS_URL = env("REDIS_URL", default="redis://localhost:6379/0")
 CELERY_BROKER_URL = REDIS_URL
 CELERY_TIMEZONE = "UTC"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+# True = run tasks inline (local dev without a worker; never in docker/prod)
+CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
 
 # Encrypts Mailbox OAuth tokens at rest (see core.crypto). Empty = warning at startup,
 # hard error on first use.
