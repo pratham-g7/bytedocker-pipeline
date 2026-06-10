@@ -1,0 +1,63 @@
+x-app: &app
+  build: .
+  restart: unless-stopped
+  env_file:
+    - path: .env
+      required: false
+  environment: &app-env
+    DATABASE_URL: postgres://bytedocker:bytedocker@postgres:5432/bytedocker
+    REDIS_URL: redis://redis:6379/0
+  depends_on: &app-deps
+    migrate:
+      condition: service_completed_successfully
+    redis:
+      condition: service_started
+
+services:
+  migrate:
+    build: .
+    restart: "no"
+    env_file:
+      - path: .env
+        required: false
+    environment: *app-env
+    command: python manage.py migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    <<: *app
+    command: gunicorn config.wsgi --bind 0.0.0.0:8000 --workers 2
+    ports:
+      - "8000:8000"
+
+  worker:
+    <<: *app
+    command: celery -A config worker -l info
+
+  beat:
+    <<: *app
+    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bytedocker
+      POSTGRES_PASSWORD: bytedocker
+      POSTGRES_DB: bytedocker
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bytedocker"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+volumes:
+  pgdata:

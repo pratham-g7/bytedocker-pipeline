@@ -1,0 +1,51 @@
+[project]
+name = "bytedocker"
+version = "0.1.0"
+description = "Bytedocker outbound pipeline — CRM + automated outreach"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=5.2,<6.0",
+    "psycopg[binary]>=3.2",
+    "celery[redis]>=5.4",
+    "django-celery-beat>=2.7",
+    "django-environ>=0.11",
+    "django-htmx>=1.19",
+    "cryptography>=43",
+    "whitenoise>=6.7",
+    "gunicorn>=23",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-django>=4.9",
+    "factory-boy>=3.3",
+    "ruff>=0.8",
+    "black>=24",
+]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["config*", "core*", "accounts*", "ingestion*", "pipeline*", "outreach*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "DJ"]
+
+[tool.ruff.lint.per-file-ignores]
+"*/migrations/*" = ["E501"]
+
+[tool.black]
+line-length = 100
+target-version = ["py313"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py"]
+testpaths = ["tests"]

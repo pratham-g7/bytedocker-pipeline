@@ -1,0 +1,11 @@
+{
+  "name": "bytedocker-assets",
+  "private": true,
+  "scripts": {
+    "css:build": "tailwindcss -i static/src/app.css -o static/css/app.css --minify",
+    "css:watch": "tailwindcss -i static/src/app.css -o static/css/app.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}

@@ -1,0 +1,66 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Bytedocker{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
+  <script defer src="{% static 'vendor/alpine.min.js' %}"></script>
+</head>
+<body class="bg-slate-100 text-slate-900 antialiased"
+      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<div class="flex min-h-screen">
+
+  <aside class="flex w-56 flex-col bg-slate-900 text-slate-300">
+    <div class="px-5 py-5 text-lg font-bold tracking-tight text-white">
+      Bytedocker <span class="text-sky-400">🐳</span>
+    </div>
+    <nav class="flex-1 space-y-1 px-3 text-sm">
+      <a href="{% url 'dashboard' %}"
+         class="block rounded-md bg-slate-800 px-3 py-2 font-medium text-white">Dashboard</a>
+      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Board</a>
+      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Contacts</a>
+      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Leads</a>
+      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Sequences</a>
+      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Templates</a>
+      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Imports</a>
+      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Tasks</a>
+      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Reports</a>
+    </nav>
+    <div class="border-t border-slate-800 px-3 py-3 text-sm">
+      {% if user.is_staff %}
+        <a href="{% url 'admin:index' %}" class="block rounded-md px-3 py-2 hover:bg-slate-800">Admin</a>
+      {% endif %}
+    </div>
+  </aside>
+
+  <div class="flex flex-1 flex-col">
+    <header class="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3">
+      <div class="text-sm font-medium text-slate-500">{% block page_title %}{% endblock %}</div>
+      <div class="flex items-center gap-4 text-sm">
+        <span class="text-slate-600">{{ user.email }}</span>
+        <form method="post" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button class="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-50">
+            Log out
+          </button>
+        </form>
+      </div>
+    </header>
+    <main class="flex-1 p-6">{% block content %}{% endblock %}</main>
+  </div>
+</div>
+
+<div x-data="{ toasts: [] }"
+     @toast.window="toasts.push($event.detail); setTimeout(() => toasts.shift(), 4000)"
+     class="fixed bottom-4 right-4 z-50 space-y-2">
+  <template x-for="(t, i) in toasts" :key="i">
+    <div class="rounded-lg px-4 py-3 text-sm text-white shadow-lg"
+         :class="t.level === 'error' ? 'bg-red-600' : 'bg-emerald-600'"
+         x-text="t.msg"></div>
+  </template>
+</div>
+</body>
+</html>

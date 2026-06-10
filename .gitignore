@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# Django
+db.sqlite3
+staticfiles/
+/media/
+
+# Env & secrets
+.env
+
+# Node
+node_modules/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
