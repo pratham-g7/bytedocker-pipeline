@@ -1,0 +1,29 @@
+<div class="card overflow-hidden p-0">
+  <table class="w-full">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="th">Name</th><th class="th">Email</th><th class="th">Company</th>
+        <th class="th">Title</th><th class="th">Owner</th><th class="th">Source</th><th class="th"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for c in page %}
+      <tr class="hover:bg-slate-50">
+        <td class="td"><a class="font-medium hover:underline" href="{% url 'contact-detail' c.pk %}">{{ c.full_name }}</a></td>
+        <td class="td">{{ c.email }}</td>
+        <td class="td">{% if c.company %}<a class="hover:underline" href="{% url 'company-detail' c.company.pk %}">{{ c.company }}</a>{% else %}—{% endif %}</td>
+        <td class="td">{{ c.title|default:"—" }}</td>
+        <td class="td">{{ c.owner.email|default:"—" }}</td>
+        <td class="td">{{ c.source|default:"—" }}</td>
+        <td class="td text-right">
+          <button hx-get="{% url 'contact-edit' c.pk %}" hx-target="#modal-slot"
+                  class="text-sm text-slate-400 hover:text-slate-700">Edit</button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="td py-10 text-center text-slate-400">No contacts yet — add one or import a CSV.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "pipeline/_pagination.html" %}

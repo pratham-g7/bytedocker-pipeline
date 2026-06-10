@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block page_title %}Leads{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <form hx-get="{% url 'leads' %}" hx-target="#leads-table" hx-push-url="true"
+        hx-trigger="submit, change" class="flex flex-wrap gap-2">
+    <select name="stage" class="input w-40">
+      <option value="">All stages</option>
+      {% for s in stages %}
+        <option value="{{ s.pk }}" {% if request.GET.stage == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+      {% endfor %}
+    </select>
+    <select name="status" class="input w-36">
+      <option value="">Any status</option>
+      <option value="open" {% if request.GET.status == "open" %}selected{% endif %}>Open</option>
+      <option value="won" {% if request.GET.status == "won" %}selected{% endif %}>Won</option>
+      <option value="lost" {% if request.GET.status == "lost" %}selected{% endif %}>Lost</option>
+    </select>
+    {% if owners %}
+      <select name="owner" class="input w-44">
+        <option value="">All owners</option>
+        {% for o in owners %}
+          <option value="{{ o.pk }}" {% if request.GET.owner == o.pk|stringformat:"s" %}selected{% endif %}>{{ o.email }}</option>
+        {% endfor %}
+      </select>
+    {% endif %}
+    <select name="stale" class="input w-44">
+      <option value="">Any activity</option>
+      <option value="7" {% if request.GET.stale == "7" %}selected{% endif %}>Stale 7+ days</option>
+      <option value="14" {% if request.GET.stale == "14" %}selected{% endif %}>Stale 14+ days</option>
+      <option value="30" {% if request.GET.stale == "30" %}selected{% endif %}>Stale 30+ days</option>
+    </select>
+  </form>
+</div>
+<div id="leads-table">{% include "pipeline/_leads_table.html" %}</div>
+{% endblock %}

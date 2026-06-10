@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block page_title %}{{ contact.full_name }}{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <div class="lg:col-span-2">
+    <div class="card mb-4 flex items-start justify-between">
+      <div>
+        <h1 class="text-xl font-bold">{{ contact.full_name }}</h1>
+        <div class="text-sm text-slate-500">
+          {{ contact.title|default:"" }}{% if contact.company %} · <a class="hover:underline" href="{% url 'company-detail' contact.company.pk %}">{{ contact.company }}</a>{% endif %}
+        </div>
+        <div class="mt-1 text-sm text-slate-400">{{ contact.email }}{% if contact.phone %} · {{ contact.phone }}{% endif %}</div>
+        <div class="mt-2 flex gap-2">
+          {% if contact.unsubscribed_at %}<span class="rounded bg-red-100 px-2 py-0.5 text-xs text-red-700">Unsubscribed</span>{% endif %}
+          {% if contact.bounced_at %}<span class="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700">Bounced</span>{% endif %}
+        </div>
+      </div>
+      <button hx-get="{% url 'contact-edit' contact.pk %}" hx-target="#modal-slot" class="btn-secondary">Edit</button>
+    </div>
+
+    <form hx-post="{% url 'contact-note-add' contact.pk %}" hx-swap="none"
+          hx-on::after-request="if(event.detail.successful) this.reset()" class="mb-4 flex gap-2">
+      <input name="text" class="input" placeholder="Add a note…" required>
+      <button class="btn-primary shrink-0">Add note</button>
+    </form>
+
+    <div id="timeline" hx-get="{% url 'contact-timeline' contact.pk %}"
+         hx-trigger="refresh-timeline from:body">
+      {% include "pipeline/_timeline.html" %}
+    </div>
+  </div>
+
+  <div class="space-y-4">
+    <div class="card">
+      <h2 class="mb-2 text-sm font-semibold">Details</h2>
+      <dl class="space-y-1 text-sm">
+        <div class="flex justify-between"><dt class="text-slate-500">Owner</dt><dd>{{ contact.owner.email|default:"—" }}</dd></div>
+        <div class="flex justify-between"><dt class="text-slate-500">Source</dt><dd>{{ contact.source|default:"—" }}</dd></div>
+        <div class="flex justify-between"><dt class="text-slate-500">LinkedIn</dt>
+          <dd>{% if contact.linkedin_url %}<a class="text-sky-600 hover:underline" href="{{ contact.linkedin_url }}" rel="noopener">profile</a>{% else %}—{% endif %}</dd></div>
+        <div class="flex justify-between"><dt class="text-slate-500">Created</dt><dd>{{ contact.created_at|date:"M j, Y" }}</dd></div>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h2 class="mb-2 text-sm font-semibold">Lead</h2>
+      {% if open_lead %}
+        <div class="text-sm">Stage: <span class="font-medium">{{ open_lead.stage.name }}</span></div>
+        <div class="text-sm text-slate-500">Owner: {{ open_lead.owner.email|default:"—" }}</div>
+        {% if open_lead.value %}<div class="text-sm text-slate-500">Value: ${{ open_lead.value }}</div>{% endif %}
+        <a href="{% url 'board' %}" class="mt-2 inline-block text-sm text-sky-600 hover:underline">View on board →</a>
+      {% else %}
+        <form hx-post="{% url 'contact-lead-create' contact.pk %}" hx-swap="none">
+          <button class="btn-primary w-full">Create lead</button>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2 class="mb-2 text-sm font-semibold">Open tasks</h2>
+      <ul class="space-y-2 text-sm">
+        {% for task in open_tasks %}
+        <li class="flex items-center justify-between gap-2">
+          <span>{{ task.title }} <span class="text-xs text-slate-400">({{ task.due_at|date:"M j" }})</span></span>
+          <button hx-post="{% url 'task-toggle' task.pk %}" hx-swap="none"
+                  class="shrink-0 text-emerald-600 hover:underline">done</button>
+        </li>
+        {% empty %}<li class="text-slate-400">None</li>{% endfor %}
+      </ul>
+      {% if open_lead %}
+      <form hx-post="{% url 'contact-task-create' contact.pk %}" hx-swap="none" class="mt-3 space-y-2">
+        {{ task_form.title }}
+        {{ task_form.due_at }}
+        <button class="btn-secondary w-full">Add task</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

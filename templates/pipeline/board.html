@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+{% block page_title %}Pipeline board{% endblock %}
+{% block content %}
+{% if owners %}
+<div class="mb-4">
+  <form hx-get="{% url 'board' %}" hx-target="#board-wrap" hx-push-url="true"
+        hx-trigger="change, refresh-board from:body" class="flex gap-2">
+    <select name="owner" class="input w-44">
+      <option value="">All owners</option>
+      {% for o in owners %}
+        <option value="{{ o.pk }}" {% if request.GET.owner == o.pk|stringformat:"s" %}selected{% endif %}>{{ o.email }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+{% else %}
+<div hx-get="{% url 'board' %}" hx-target="#board-wrap" hx-trigger="refresh-board from:body"></div>
+{% endif %}
+<div id="board-wrap">{% include "pipeline/_board.html" %}</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'vendor/sortable.min.js' %}"></script>
+<script>
+  function initBoard(root) {
+    (root || document).querySelectorAll('.kanban-col').forEach(function (el) {
+      if (el.dataset.sortable) return;
+      el.dataset.sortable = '1';
+      new Sortable(el, {
+        group: 'board',
+        animation: 150,
+        onEnd: function (e) {
+          if (e.to === e.from) return;
+          htmx.ajax('POST', '/leads/' + e.item.dataset.leadId + '/move/', {
+            source: document.body,
+            swap: 'none',
+            values: { stage: e.to.dataset.stageId }
+          });
+        }
+      });
+    });
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    initBoard(document);
+    htmx.onLoad(initBoard);
+  });
+</script>
+{% endblock %}

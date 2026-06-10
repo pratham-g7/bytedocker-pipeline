@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block page_title %}Companies{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between gap-4">
+  <form hx-get="{% url 'companies' %}" hx-target="#companies-table" hx-push-url="true"
+        hx-trigger="submit, refresh-companies from:body" class="flex gap-2">
+    <input name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search name or domain…" class="input w-64">
+    <button class="btn-secondary">Search</button>
+  </form>
+  <button hx-get="{% url 'company-create' %}" hx-target="#modal-slot" class="btn-primary shrink-0">
+    New company
+  </button>
+</div>
+<div id="companies-table">{% include "pipeline/_companies_table.html" %}</div>
+{% endblock %}

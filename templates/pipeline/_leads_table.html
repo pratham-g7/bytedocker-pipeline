@@ -1,0 +1,31 @@
+<div class="card overflow-hidden p-0">
+  <table class="w-full">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="th">Contact</th><th class="th">Company</th><th class="th">Stage</th>
+        <th class="th">Status</th><th class="th">Owner</th><th class="th">Value</th>
+        <th class="th">Last activity</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for lead in page %}
+      <tr class="hover:bg-slate-50">
+        <td class="td"><a class="font-medium hover:underline" href="{% url 'contact-detail' lead.contact_id %}">{{ lead.contact.full_name }}</a></td>
+        <td class="td">{{ lead.contact.company|default:"—" }}</td>
+        <td class="td">{{ lead.stage.name }}</td>
+        <td class="td">
+          {% if lead.status == "won" %}<span class="rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">won</span>
+          {% elif lead.status == "lost" %}<span class="rounded bg-red-100 px-2 py-0.5 text-xs text-red-700">lost</span>
+          {% else %}<span class="rounded bg-sky-100 px-2 py-0.5 text-xs text-sky-700">open</span>{% endif %}
+        </td>
+        <td class="td">{{ lead.owner.email|default:"—" }}</td>
+        <td class="td">{% if lead.value %}${{ lead.value|floatformat:0 }}{% else %}—{% endif %}</td>
+        <td class="td">{{ lead.last_activity_at|date:"M j, Y"|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="td py-10 text-center text-slate-400">No leads match.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% include "pipeline/_pagination.html" %}

@@ -1,0 +1,22 @@
+<ul class="space-y-2">
+  {% for s in stages %}
+  <li class="card flex items-center gap-3 p-3">
+    <div class="flex flex-col leading-none">
+      <button hx-post="{% url 'stage-move' s.pk %}" hx-vals='{"dir":"up"}' hx-target="#stages-list"
+              class="text-slate-400 hover:text-slate-700">▲</button>
+      <button hx-post="{% url 'stage-move' s.pk %}" hx-vals='{"dir":"down"}' hx-target="#stages-list"
+              class="text-slate-400 hover:text-slate-700">▼</button>
+    </div>
+    <input value="{{ s.name }}" name="name" hx-post="{% url 'stage-rename' s.pk %}"
+           hx-target="#stages-list" hx-trigger="change" class="input"
+           {% if s.is_won or s.is_lost %}disabled{% endif %}>
+    <span class="shrink-0 text-xs text-slate-400">{{ s.lead_count }} lead{{ s.lead_count|pluralize }}</span>
+    {% if s.is_won %}<span class="shrink-0 rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">won</span>{% endif %}
+    {% if s.is_lost %}<span class="shrink-0 rounded bg-red-100 px-2 py-0.5 text-xs text-red-700">lost</span>{% endif %}
+    {% if not s.is_won and not s.is_lost %}
+    <button hx-post="{% url 'stage-delete' s.pk %}" hx-confirm="Delete stage “{{ s.name }}”?"
+            hx-target="#stages-list" class="shrink-0 text-sm text-red-500 hover:underline">Delete</button>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>

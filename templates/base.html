@@ -18,20 +18,23 @@
       Bytedocker <span class="text-sky-400">🐳</span>
     </div>
     <nav class="flex-1 space-y-1 px-3 text-sm">
-      <a href="{% url 'dashboard' %}"
-         class="block rounded-md bg-slate-800 px-3 py-2 font-medium text-white">Dashboard</a>
-      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Board</a>
-      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Contacts</a>
-      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Leads</a>
-      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Sequences</a>
-      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Templates</a>
-      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Imports</a>
-      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Tasks</a>
-      <a href="#" class="block cursor-not-allowed rounded-md px-3 py-2 opacity-40">Reports</a>
+      <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
+      <a href="{% url 'board' %}" class="nav-link">Board</a>
+      <a href="{% url 'contacts' %}" class="nav-link">Contacts</a>
+      <a href="{% url 'leads' %}" class="nav-link">Leads</a>
+      <a href="{% url 'companies' %}" class="nav-link">Companies</a>
+      <a href="#" class="nav-disabled">Sequences</a>
+      <a href="#" class="nav-disabled">Templates</a>
+      <a href="#" class="nav-disabled">Imports</a>
+      <a href="{% url 'tasks' %}" class="nav-link">Tasks</a>
+      <a href="#" class="nav-disabled">Reports</a>
     </nav>
     <div class="border-t border-slate-800 px-3 py-3 text-sm">
+      {% if user.role == "admin" %}
+        <a href="{% url 'stages-settings' %}" class="nav-link">Stage settings</a>
+      {% endif %}
       {% if user.is_staff %}
-        <a href="{% url 'admin:index' %}" class="block rounded-md px-3 py-2 hover:bg-slate-800">Admin</a>
+        <a href="{% url 'admin:index' %}" class="nav-link">Admin</a>
       {% endif %}
     </div>
   </aside>
@@ -43,15 +46,15 @@
         <span class="text-slate-600">{{ user.email }}</span>
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
-          <button class="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-50">
-            Log out
-          </button>
+          <button class="btn-secondary py-1">Log out</button>
         </form>
       </div>
     </header>
     <main class="flex-1 p-6">{% block content %}{% endblock %}</main>
   </div>
 </div>
+
+<div id="modal-slot"></div>
 
 <div x-data="{ toasts: [] }"
      @toast.window="toasts.push($event.detail); setTimeout(() => toasts.shift(), 4000)"
@@ -62,5 +65,12 @@
          x-text="t.msg"></div>
   </template>
 </div>
+
+<script>
+  document.addEventListener('close-modal', function () {
+    document.getElementById('modal-slot').innerHTML = '';
+  });
+</script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.urls import path
+from django.urls import include, path
 
 from core import views as core_views
 
@@ -10,4 +10,5 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("", core_views.dashboard, name="dashboard"),
     path("demo/toast/", core_views.toast_demo, name="toast-demo"),
+    path("", include("pipeline.urls")),
 ]

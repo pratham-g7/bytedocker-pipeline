@@ -1,0 +1,26 @@
+<div class="flex items-start gap-4 overflow-x-auto pb-4">
+  {% for col in columns %}
+  <div class="w-64 shrink-0 rounded-xl bg-slate-200/70 p-3 {% if col.stage.is_won or col.stage.is_lost %}opacity-80{% endif %}">
+    <div class="mb-2 flex items-center justify-between text-sm font-semibold">
+      <span>{{ col.stage.name }}
+        {% if col.stage.is_won %}<span class="text-emerald-600">✓</span>{% endif %}
+        {% if col.stage.is_lost %}<span class="text-red-500">✕</span>{% endif %}
+      </span>
+      <span class="text-slate-500">{{ col.leads|length }}</span>
+    </div>
+    <ul class="kanban-col min-h-16 space-y-2" data-stage-id="{{ col.stage.pk }}">
+      {% for lead in col.leads %}
+      <li data-lead-id="{{ lead.pk }}" class="cursor-grab rounded-lg bg-white p-3 shadow-sm">
+        <a href="{% url 'contact-detail' lead.contact_id %}"
+           class="text-sm font-medium hover:underline">{{ lead.contact.full_name }}</a>
+        <div class="truncate text-xs text-slate-500">{{ lead.contact.company|default:"—" }}</div>
+        <div class="mt-1 flex justify-between text-xs text-slate-400">
+          <span>{% if lead.value %}${{ lead.value|floatformat:0 }}{% endif %}</span>
+          <span>{{ lead.stage_since|timesince }}</span>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+</div>

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block page_title %}Contacts{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between gap-4">
+  <form hx-get="{% url 'contacts' %}" hx-target="#contacts-table" hx-push-url="true"
+        hx-trigger="submit, change, refresh-contacts from:body" class="flex gap-2">
+    <input name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search name, email, company…"
+           class="input w-64">
+    {% if owners %}
+      <select name="owner" class="input w-44">
+        <option value="">All owners</option>
+        {% for o in owners %}
+          <option value="{{ o.pk }}" {% if request.GET.owner == o.pk|stringformat:"s" %}selected{% endif %}>{{ o.email }}</option>
+        {% endfor %}
+      </select>
+    {% endif %}
+    <select name="source" class="input w-44">
+      <option value="">All sources</option>
+      {% for s in sources %}
+        <option {% if request.GET.source == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn-secondary">Filter</button>
+  </form>
+  <button hx-get="{% url 'contact-create' %}" hx-target="#modal-slot" class="btn-primary shrink-0">
+    New contact
+  </button>
+</div>
+<div id="contacts-table">{% include "pipeline/_contacts_table.html" %}</div>
+{% endblock %}

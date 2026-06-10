@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block page_title %}Stage settings{% endblock %}
+{% block content %}
+<div class="max-w-xl">
+  <p class="mb-4 text-sm text-slate-500">
+    Stages define the pipeline board columns. Won/Lost stages are fixed.
+  </p>
+  <form hx-post="{% url 'stage-add' %}" hx-target="#stages-list"
+        hx-on::after-request="if(event.detail.successful) this.reset()" class="mb-4 flex gap-2">
+    <input name="name" class="input" placeholder="New stage name" required>
+    <button class="btn-primary shrink-0">Add stage</button>
+  </form>
+  <div id="stages-list">{% include "pipeline/_stages.html" %}</div>
+</div>
+{% endblock %}
