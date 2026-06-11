@@ -126,13 +126,30 @@ def send_step(self, enrollment_id, step_no):
     if not subject.strip() or not html.strip():
         _fail_send(enrollment_id, step_no, reason="template rendered an empty subject/body")
         return  # a broken render must never reach a send (ENGINE_SPEC §6)
+
+    # Threading (ENGINE_SPEC §1): steps 2+ reply on the first sent message with the
+    # same subject (Re: …) so the sequence reads as one conversation.
+    thread_ref = None
+    if step_no > 1:
+        first = (
+            Message.objects.filter(enrollment=enrollment, status=Message.Status.SENT)
+            .exclude(provider_message_id="")
+            .order_by("step__order")
+            .first()
+        )
+        if first:
+            thread_ref = {
+                "message_id": first.provider_message_id,
+                "thread_id": first.thread_id,
+            }
+            subject = f"Re: {first.subject_rendered}"
+
     message.subject_rendered = subject[:300]
     message.save(update_fields=["subject_rendered", "updated_at"])
 
     try:
-        # thread_ref for steps 2+ lands with task 2.8 (threading)
         provider_message_id, thread_id = get_provider(mailbox).send(
-            to=contact.email, subject=subject, html=html, text=text
+            to=contact.email, subject=subject, html=html, text=text, thread_ref=thread_ref
         )
     except TransientProviderError:
         raise  # autoretry ×3 with backoff; on_failure then applies the §6 contract

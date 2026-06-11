@@ -353,6 +353,42 @@ def test_empty_rendered_subject_never_reaches_provider(provider):
     assert enrollment.status == Enrollment.Status.PAUSED
 
 
+# ---------------------------------------------------------------- threading (2.8)
+
+
+def test_step_one_sends_without_thread_ref(provider):
+    enrollment = _due_enrollment(steps=2)
+    send_step(enrollment.pk, 1)
+    assert provider.send.call_args.kwargs["thread_ref"] is None
+
+
+def test_steps_two_plus_reply_in_step_ones_thread(provider):
+    enrollment = _due_enrollment(steps=2)
+    send_step(enrollment.pk, 1)
+    step_one_subject = Message.objects.get(step__order=1).subject_rendered
+    enrollment.refresh_from_db()
+    enrollment.next_send_at = timezone.now()  # step 2 due now
+    enrollment.save(update_fields=["next_send_at"])
+
+    send_step(enrollment.pk, 2)
+
+    kwargs = provider.send.call_args.kwargs
+    assert kwargs["thread_ref"] == {"message_id": "pm-1", "thread_id": "th-1"}
+    assert kwargs["subject"] == f"Re: {step_one_subject}"
+    assert Message.objects.get(step__order=2).subject_rendered == f"Re: {step_one_subject}"
+
+
+def test_thread_ref_omitted_when_no_prior_send(provider):
+    # step 1 never left (e.g. failed then stopped) — step 2 starts its own thread
+    enrollment = _due_enrollment(steps=2)
+    enrollment.current_step = 1
+    enrollment.save(update_fields=["current_step"])
+
+    send_step(enrollment.pk, 2)
+
+    assert provider.send.call_args.kwargs["thread_ref"] is None
+
+
 # ---------------------------------------------------------------- scheduled jobs
 
 

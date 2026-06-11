@@ -72,9 +72,14 @@ class GmailProvider:
         message["To"] = to
         message["From"] = self.mailbox.email
         message["Subject"] = subject
-        if thread_ref:  # steps 2+ reply in-thread (ENGINE_SPEC §1; completed in 2.8)
-            message["In-Reply-To"] = thread_ref["message_id"]
-            message["References"] = thread_ref["message_id"]
+        if thread_ref:  # steps 2+ reply in-thread (ENGINE_SPEC §1)
+            # Gmail threads on threadId + matching subject + RFC 2822 reply headers.
+            # thread_ref carries the API message id; the headers need the original's
+            # RFC Message-ID, so resolve it with a metadata lookup.
+            rfc_id = self._rfc_message_id(thread_ref["message_id"])
+            if rfc_id:
+                message["In-Reply-To"] = rfc_id
+                message["References"] = rfc_id
         message.set_content(text)
         message.add_alternative(html, subtype="html")
         body = {"raw": base64.urlsafe_b64encode(message.as_bytes()).decode()}
@@ -84,6 +89,23 @@ class GmailProvider:
             lambda service: service.users().messages().send(userId="me", body=body).execute()
         )
         return result["id"], result["threadId"]
+
+    def _rfc_message_id(self, provider_message_id: str) -> str | None:
+        result = self._call(
+            lambda service: service.users()
+            .messages()
+            .get(
+                userId="me",
+                id=provider_message_id,
+                format="metadata",
+                metadataHeaders=["Message-Id"],
+            )
+            .execute()
+        )
+        for header in result.get("payload", {}).get("headers", []):
+            if header.get("name", "").lower() == "message-id":
+                return header.get("value")
+        return None  # still sent with threadId — Gmail usually threads regardless
 
     def fetch_new_messages(self, cursor):  # reply polling — Phase 3
         raise NotImplementedError("Reply polling arrives in Phase 3 (ENGINE_SPEC §3).")

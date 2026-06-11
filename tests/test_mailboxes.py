@@ -249,9 +249,11 @@ def test_send_builds_mime_and_returns_ids(monkeypatch):
 def test_send_with_thread_ref_replies_in_thread(monkeypatch):
     mailbox = MailboxFactory()
     service = MagicMock()
-    service.users.return_value.messages.return_value.send.return_value.execute.return_value = {
-        "id": "msg-2",
-        "threadId": "thr-1",
+    messages = service.users.return_value.messages.return_value
+    messages.send.return_value.execute.return_value = {"id": "msg-2", "threadId": "thr-1"}
+    # the provider resolves the original's RFC Message-ID from its API id
+    messages.get.return_value.execute.return_value = {
+        "payload": {"headers": [{"name": "Message-Id", "value": "<abc@mail.gmail.com>"}]}
     }
     monkeypatch.setattr(GmailProvider, "_service", lambda self: service)
 
@@ -260,10 +262,11 @@ def test_send_with_thread_ref_replies_in_thread(monkeypatch):
         subject="Re: Hello Acme",
         html="<p>Bump</p>",
         text="Bump",
-        thread_ref={"message_id": "<abc@mail.gmail.com>", "thread_id": "thr-1"},
+        thread_ref={"message_id": "gmail-api-id-1", "thread_id": "thr-1"},
     )
 
-    body = service.users.return_value.messages.return_value.send.call_args.kwargs["body"]
+    assert messages.get.call_args.kwargs["id"] == "gmail-api-id-1"
+    body = messages.send.call_args.kwargs["body"]
     assert body["threadId"] == "thr-1"
     raw = base64.urlsafe_b64decode(body["raw"])
     assert b"In-Reply-To: <abc@mail.gmail.com>" in raw
