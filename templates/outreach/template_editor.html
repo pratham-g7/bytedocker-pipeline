@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block page_title %}{% if template_obj %}Edit template — {{ template_obj.name }}{% else %}New template{% endif %}{% endblock %}
+{% block content %}
+<div class="grid grid-cols-2 gap-6">
+  <div>{% include "outreach/_editor_form.html" %}</div>
+  <div>
+    <div class="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Preview</div>
+    <div id="template-preview"
+         hx-post="{% url 'template-preview' %}"
+         hx-include="#template-form"
+         hx-trigger="load, input from:#template-form delay:500ms"
+         hx-target="this" hx-swap="innerHTML">
+      <div class="card text-sm text-slate-400">Rendering preview…</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

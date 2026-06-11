@@ -12,4 +12,5 @@ urlpatterns = [
     path("demo/toast/", core_views.toast_demo, name="toast-demo"),
     path("", include("pipeline.urls")),
     path("", include("ingestion.urls")),
+    path("", include("outreach.urls")),
 ]

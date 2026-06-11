@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block page_title %}Templates{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between gap-4">
+  <form hx-get="{% url 'templates' %}" hx-target="#templates-table" hx-push-url="true"
+        hx-trigger="submit, change, refresh-templates from:body" class="flex gap-2">
+    <input name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search templates…"
+           class="input w-64">
+    <button class="btn-secondary">Filter</button>
+  </form>
+  <a href="{% url 'template-create' %}" class="btn-primary shrink-0">New template</a>
+</div>
+<div id="templates-table">{% include "outreach/_templates_table.html" %}</div>
+{% endblock %}
