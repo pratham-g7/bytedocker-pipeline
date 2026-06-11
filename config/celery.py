@@ -14,4 +14,17 @@ app.conf.beat_schedule = {
         "task": "core.tasks.heartbeat",
         "schedule": 300.0,
     },
+    # Outreach engine (ENGINE_SPEC §5)
+    "outreach-dispatch-due-sends": {
+        "task": "outreach.tasks.dispatch_due_sends",
+        "schedule": 60.0,
+    },
+    "outreach-reset-daily-counters": {
+        "task": "outreach.tasks.reset_daily_counters",
+        "schedule": 3600.0,
+    },
+    "outreach-refresh-expiring-tokens": {
+        "task": "outreach.tasks.refresh_expiring_tokens",
+        "schedule": 1800.0,
+    },
 }

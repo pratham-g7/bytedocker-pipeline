@@ -120,3 +120,6 @@ GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET", default="")
 MS_CLIENT_ID = env("MS_CLIENT_ID", default="")
 MS_CLIENT_SECRET = env("MS_CLIENT_SECRET", default="")
 MS_TENANT = env("MS_TENANT", default="common")
+
+# Outreach guardrails (ENGINE_SPEC §7). Weekday-only sending is the v1 default.
+SEND_WEEKDAYS_ONLY = env.bool("SEND_WEEKDAYS_ONLY", default=True)

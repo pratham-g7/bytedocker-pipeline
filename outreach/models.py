@@ -46,6 +46,9 @@ class Mailbox(TimeStampedModel):
     send_window_end = models.TimeField(default=time(18, 0))
     timezone = models.CharField(max_length=40, default="UTC")  # IANA name
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.ACTIVE)
+    # Mailbox-local date the daily counter was last reset for (ENGINE_SPEC §5:
+    # per-tz correctness without a per-tz cron).
+    counters_reset_on = models.DateField(null=True, blank=True)
 
     class Meta:
         verbose_name_plural = "mailboxes"

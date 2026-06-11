@@ -365,6 +365,11 @@ def step_delete(request, pk):
     if step.sequence.is_locked:
         return hx_toast("Sequence has enrollments — clone it to edit.", level="error")
     step.delete()
+    # Keep orders contiguous 1..n — the sender loop walks current_step + 1 (2.6).
+    for index, remaining in enumerate(step.sequence.steps.order_by("order"), start=1):
+        if remaining.order != index:
+            remaining.order = index
+            remaining.save(update_fields=["order", "updated_at"])
     return hx_toast("Step removed.", extra_events={"refresh-steps": True})
 
 
