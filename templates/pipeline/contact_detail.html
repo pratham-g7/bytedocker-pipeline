@@ -56,6 +56,12 @@
       {% endif %}
     </div>
 
+    <div class="card" id="contact-enrollments"
+         hx-get="{% url 'contact-enrollments' contact.pk %}"
+         hx-trigger="refresh-enrollments from:body">
+      {% include "outreach/_contact_enrollments.html" with enrollments=contact.enrollments.all %}
+    </div>
+
     <div class="card">
       <h2 class="mb-2 text-sm font-semibold">Open tasks</h2>
       <ul class="space-y-2 text-sm">

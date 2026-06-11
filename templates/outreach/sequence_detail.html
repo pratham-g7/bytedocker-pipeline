@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block page_title %}Sequence — {{ sequence.name }}{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between gap-4">
+  <div>
+    <h1 class="text-lg font-bold">{{ sequence.name }}</h1>
+    <div class="text-sm text-slate-500">Owner: {{ sequence.owner.email }}</div>
+  </div>
+  <div class="flex items-center gap-2">
+    {% if locked %}
+      <form hx-post="{% url 'sequence-clone' sequence.pk %}" hx-swap="none">
+        <button class="btn-primary">Clone to edit</button>
+      </form>
+    {% endif %}
+    <form hx-post="{% url 'sequence-toggle' sequence.pk %}" hx-swap="none">
+      <button class="btn-secondary">{% if sequence.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+    </form>
+    <a href="{% url 'sequences' %}" class="btn-secondary">Back</a>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+  <div id="sequence-steps" hx-get="{% url 'sequence-steps' sequence.pk %}"
+       hx-trigger="refresh-steps from:body">
+    {% include "outreach/_steps.html" %}
+  </div>
+  <div id="sequence-enrollments" hx-get="{% url 'sequence-enrollments' sequence.pk %}"
+       hx-trigger="refresh-enrollments from:body">
+    {% include "outreach/_enrollments.html" %}
+  </div>
+</div>
+{% endblock %}

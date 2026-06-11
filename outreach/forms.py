@@ -4,7 +4,7 @@ from django import forms
 
 from pipeline.forms import StyledModelForm
 
-from .models import EmailTemplate, Mailbox
+from .models import EmailTemplate, Mailbox, Sequence, SequenceStep, scope_sequences
 
 
 class EmailTemplateForm(StyledModelForm):
@@ -36,3 +36,36 @@ class MailboxSettingsForm(StyledModelForm):
         except Exception:
             raise forms.ValidationError("Unknown IANA timezone name.") from None
         return value
+
+
+class SequenceForm(StyledModelForm):
+    class Meta:
+        model = Sequence
+        fields = ["name", "is_active"]
+
+
+class StepForm(StyledModelForm):
+    class Meta:
+        model = SequenceStep
+        fields = ["template", "wait_days"]
+        help_texts = {"wait_days": "Days after the previous step (first step: after enrollment)."}
+
+
+class EnrollForm(forms.Form):
+    """Enroll modal: sequence + sending mailbox (UI_SPEC §3 contact detail)."""
+
+    sequence = forms.ModelChoiceField(queryset=Sequence.objects.none())
+    mailbox = forms.ModelChoiceField(queryset=Mailbox.objects.none(), label="Send from")
+
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["sequence"].queryset = scope_sequences(
+            Sequence.objects.filter(is_active=True).order_by("name"), user
+        )
+        mailboxes = user.mailboxes.filter(status=Mailbox.Status.ACTIVE).order_by("email")
+        self.fields["mailbox"].queryset = mailboxes
+        first = mailboxes.first()  # default = owner's first active mailbox
+        if first:
+            self.fields["mailbox"].initial = first.pk
+        for field in self.fields.values():
+            field.widget.attrs.setdefault("class", "input")

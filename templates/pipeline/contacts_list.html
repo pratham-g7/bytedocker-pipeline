@@ -22,9 +22,15 @@
     </select>
     <button class="btn-secondary">Filter</button>
   </form>
-  <button hx-get="{% url 'contact-create' %}" hx-target="#modal-slot" class="btn-primary shrink-0">
-    New contact
-  </button>
+  <div class="flex shrink-0 gap-2">
+    <button hx-get="{% url 'enroll-modal' %}" hx-include="input[name='cid']:checked"
+            hx-target="#modal-slot" class="btn-secondary">
+      Enroll selected
+    </button>
+    <button hx-get="{% url 'contact-create' %}" hx-target="#modal-slot" class="btn-primary">
+      New contact
+    </button>
+  </div>
 </div>
 <div id="contacts-table">{% include "pipeline/_contacts_table.html" %}</div>
 {% endblock %}

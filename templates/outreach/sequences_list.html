@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block page_title %}Sequences{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between gap-4">
+  <p class="text-sm text-slate-500">Multi-step email sequences sent from connected mailboxes.</p>
+  <button hx-get="{% url 'sequence-create' %}" hx-target="#modal-slot" class="btn-primary shrink-0">
+    New sequence
+  </button>
+</div>
+<div id="sequences-table" hx-get="{% url 'sequences' %}" hx-trigger="refresh-sequences from:body">
+  {% include "outreach/_sequences_table.html" %}
+</div>
+{% endblock %}

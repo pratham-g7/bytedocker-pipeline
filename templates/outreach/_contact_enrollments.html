@@ -1,0 +1,27 @@
+<h2 class="mb-2 text-sm font-semibold">Sequences</h2>
+<ul class="space-y-2 text-sm">
+  {% for e in enrollments %}
+  <li class="flex items-center justify-between gap-2">
+    <span>
+      <a class="hover:underline" href="{% url 'sequence-detail' e.sequence.pk %}">{{ e.sequence.name }}</a>
+      <span class="ml-1 rounded-full px-2 py-0.5 text-xs font-medium
+        {% if e.status == 'active' %}bg-emerald-100 text-emerald-700
+        {% elif e.status == 'paused' %}bg-amber-100 text-amber-700
+        {% elif e.status == 'replied' %}bg-sky-100 text-sky-700
+        {% elif e.status == 'bounced' or e.status == 'unsubscribed' %}bg-red-100 text-red-700
+        {% else %}bg-slate-100 text-slate-600{% endif %}">{{ e.get_status_display }}</span>
+    </span>
+    <span class="shrink-0 text-xs">
+      {% if e.status == 'active' %}
+        <button hx-post="{% url 'enrollment-action' e.pk %}" hx-vals='{"action": "pause"}' hx-swap="none" class="text-slate-400 hover:text-slate-700">pause</button>
+        <button hx-post="{% url 'enrollment-action' e.pk %}" hx-vals='{"action": "stop"}' hx-swap="none" class="ml-1 text-slate-400 hover:text-red-600">stop</button>
+      {% elif e.status == 'paused' %}
+        <button hx-post="{% url 'enrollment-action' e.pk %}" hx-vals='{"action": "resume"}' hx-swap="none" class="text-emerald-600 hover:underline">resume</button>
+        <button hx-post="{% url 'enrollment-action' e.pk %}" hx-vals='{"action": "stop"}' hx-swap="none" class="ml-1 text-slate-400 hover:text-red-600">stop</button>
+      {% endif %}
+    </span>
+  </li>
+  {% empty %}<li class="text-slate-400">Not enrolled in any sequence.</li>{% endfor %}
+</ul>
+<button hx-get="{% url 'enroll-modal' %}?cid={{ contact.pk }}" hx-target="#modal-slot"
+        class="btn-secondary mt-3 w-full">Enroll in sequence</button>

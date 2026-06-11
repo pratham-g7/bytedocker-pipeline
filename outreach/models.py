@@ -89,12 +89,26 @@ class EmailTemplate(TimeStampedModel):
         return self.name
 
 
+def scope_sequences(queryset, user):
+    """UI_SPEC §5: reps see own + their team's sequences; managers/admins see all."""
+    if user.role != "rep":
+        return queryset
+    if user.team_id:
+        return queryset.filter(models.Q(owner=user) | models.Q(owner__team_id=user.team_id))
+    return queryset.filter(owner=user)
+
+
 class Sequence(TimeStampedModel):
     name = models.CharField(max_length=120)
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="sequences"
     )
     is_active = models.BooleanField(default=True)
+
+    @property
+    def is_locked(self) -> bool:
+        """Steps freeze once any enrollment references the sequence (DATA_SPEC §3)."""
+        return self.enrollments.exists()
 
     def __str__(self):
         return self.name
@@ -200,7 +214,8 @@ class Enrollment(TimeStampedModel):
         self._log(Activity.Type.UNSUBSCRIBED, payload)
 
     def mark_finished(self):
-        self._require(self.Status.ACTIVE)
+        # last step sent (sender loop) or manual "stop" — both legal from paused
+        self._require(self.Status.ACTIVE, self.Status.PAUSED)
         self._terminalize(self.Status.FINISHED)
 
     def _terminalize(self, status: str) -> None:

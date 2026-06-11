@@ -1,0 +1,29 @@
+<div class="card overflow-hidden p-0">
+  <table class="w-full">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="th">Name</th><th class="th">Owner</th><th class="th">Steps</th>
+        <th class="th">Active</th><th class="th">Replied</th><th class="th">Finished</th>
+        <th class="th">Status</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for s in sequences %}
+      <tr class="hover:bg-slate-50">
+        <td class="td"><a class="font-medium hover:underline" href="{% url 'sequence-detail' s.pk %}">{{ s.name }}</a></td>
+        <td class="td text-slate-500">{{ s.owner.email }}</td>
+        <td class="td">{{ s.step_count }}</td>
+        <td class="td">{{ s.active_count }}</td>
+        <td class="td">{{ s.replied_count }}</td>
+        <td class="td">{{ s.finished_count }}</td>
+        <td class="td">
+          {% if s.is_active %}<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">Active</span>
+          {% else %}<span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">Inactive</span>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="td py-10 text-center text-slate-400">No sequences yet — create one and add steps.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

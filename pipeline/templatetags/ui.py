@@ -35,6 +35,8 @@ def activity_text(activity):
             return f"Completed task: {p.get('title', '')}"
         case "import":
             return f"Imported ({p.get('source', 'csv')})"
+        case "enrolled":
+            return f"Enrolled in {p.get('sequence', 'a sequence')}"
         case _:
             return activity.get_type_display()
 

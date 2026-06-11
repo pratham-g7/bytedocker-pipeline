@@ -2,6 +2,8 @@
   <table class="w-full">
     <thead class="bg-slate-50">
       <tr>
+        <th class="th w-8"><input type="checkbox"
+              onclick="this.closest('table').querySelectorAll('input[name=cid]').forEach(c => c.checked = this.checked)"></th>
         <th class="th">Name</th><th class="th">Email</th><th class="th">Company</th>
         <th class="th">Title</th><th class="th">Owner</th><th class="th">Source</th><th class="th"></th>
       </tr>
@@ -9,6 +11,7 @@
     <tbody class="divide-y divide-slate-100">
       {% for c in page %}
       <tr class="hover:bg-slate-50">
+        <td class="td"><input type="checkbox" name="cid" value="{{ c.pk }}"></td>
         <td class="td"><a class="font-medium hover:underline" href="{% url 'contact-detail' c.pk %}">{{ c.full_name }}</a></td>
         <td class="td">{{ c.email }}</td>
         <td class="td">{% if c.company %}<a class="hover:underline" href="{% url 'company-detail' c.company.pk %}">{{ c.company }}</a>{% else %}—{% endif %}</td>
@@ -21,7 +24,7 @@
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="7" class="td py-10 text-center text-slate-400">No contacts yet — add one or import a CSV.</td></tr>
+      <tr><td colspan="8" class="td py-10 text-center text-slate-400">No contacts yet — add one or import a CSV.</td></tr>
       {% endfor %}
     </tbody>
   </table>

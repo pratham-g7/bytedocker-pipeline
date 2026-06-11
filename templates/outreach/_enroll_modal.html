@@ -1,0 +1,35 @@
+<div class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
+  <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+    <div class="mb-4 flex items-center justify-between">
+      <h2 class="text-base font-semibold">
+        Enroll {{ contacts|length }} contact{{ contacts|length|pluralize }} in a sequence
+      </h2>
+      <button type="button" class="text-slate-400 hover:text-slate-600"
+              onclick="document.getElementById('modal-slot').innerHTML=''">✕</button>
+    </div>
+    <p class="mb-3 max-h-24 overflow-y-auto text-xs text-slate-500">
+      {% for c in contacts %}{{ c.full_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+    </p>
+    {% if not form.mailbox.field.queryset %}
+      <div class="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        No active mailbox connected — <a class="font-medium underline" href="{% url 'mailboxes' %}">connect one</a> before enrolling.
+      </div>
+    {% endif %}
+    <form hx-post="{% url 'enroll' %}" hx-swap="none">
+      {% csrf_token %}
+      {% for c in contacts %}<input type="hidden" name="cid" value="{{ c.pk }}">{% endfor %}
+      {% for field in form %}
+        <div class="mb-3">
+          <label class="mb-1 block text-sm font-medium" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
+        </div>
+      {% endfor %}
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" class="btn-secondary"
+                onclick="document.getElementById('modal-slot').innerHTML=''">Cancel</button>
+        <button class="btn-primary" {% if not form.mailbox.field.queryset %}disabled{% endif %}>Enroll</button>
+      </div>
+    </form>
+  </div>
+</div>

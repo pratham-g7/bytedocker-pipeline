@@ -1,0 +1,48 @@
+<div class="card">
+  <div class="mb-3 flex items-center justify-between gap-2">
+    <h2 class="text-sm font-semibold">Enrollments</h2>
+    <div class="flex flex-wrap gap-1">
+      <a hx-get="{% url 'sequence-enrollments' sequence.pk %}" hx-target="#sequence-enrollments"
+         class="cursor-pointer rounded-full px-2 py-0.5 text-xs {% if not status_filter %}bg-slate-900 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">all</a>
+      {% for value, label in statuses %}
+      <a hx-get="{% url 'sequence-enrollments' sequence.pk %}?status={{ value }}" hx-target="#sequence-enrollments"
+         class="cursor-pointer rounded-full px-2 py-0.5 text-xs {% if status_filter == value %}bg-slate-900 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">{{ label|lower }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  <table class="w-full">
+    <thead class="bg-slate-50">
+      <tr><th class="th">Contact</th><th class="th">Status</th><th class="th">Step</th><th class="th">Next send</th><th class="th"></th></tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for e in enrollments %}
+      <tr class="hover:bg-slate-50">
+        <td class="td"><a class="hover:underline" href="{% url 'contact-detail' e.contact.pk %}">{{ e.contact.full_name }}</a></td>
+        <td class="td">
+          <span class="rounded-full px-2 py-0.5 text-xs font-medium
+            {% if e.status == 'active' %}bg-emerald-100 text-emerald-700
+            {% elif e.status == 'paused' %}bg-amber-100 text-amber-700
+            {% elif e.status == 'replied' %}bg-sky-100 text-sky-700
+            {% elif e.status == 'bounced' or e.status == 'unsubscribed' %}bg-red-100 text-red-700
+            {% else %}bg-slate-100 text-slate-600{% endif %}">{{ e.get_status_display }}</span>
+        </td>
+        <td class="td">{{ e.current_step }}</td>
+        <td class="td text-slate-500">{{ e.next_send_at|date:"M j, H:i"|default:"—" }}</td>
+        <td class="td text-right text-sm">
+          {% if e.status == 'active' %}
+            <button hx-post="{% url 'enrollment-action' e.pk %}" hx-vals='{"action": "pause"}' hx-swap="none" class="text-slate-400 hover:text-slate-700">pause</button>
+            <button hx-post="{% url 'enrollment-action' e.pk %}" hx-vals='{"action": "stop"}' hx-swap="none" class="ml-2 text-slate-400 hover:text-red-600">stop</button>
+          {% elif e.status == 'paused' %}
+            <button hx-post="{% url 'enrollment-action' e.pk %}" hx-vals='{"action": "resume"}' hx-swap="none" class="text-emerald-600 hover:underline">resume</button>
+            <button hx-post="{% url 'enrollment-action' e.pk %}" hx-vals='{"action": "stop"}' hx-swap="none" class="ml-2 text-slate-400 hover:text-red-600">stop</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="td py-8 text-center text-slate-400">
+        {% if status_filter %}No {{ status_filter }} enrollments.{% else %}No enrollments yet — enroll contacts from the contact list or a contact page.{% endif %}
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

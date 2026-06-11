@@ -2,15 +2,27 @@ import secrets
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db.models import Count
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Max, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from core.http import hx_toast
+from core.permissions import scope_to_user
+from pipeline.models import Activity, Contact
 
-from .forms import EmailTemplateForm, MailboxSettingsForm
-from .models import EmailTemplate, Mailbox
+from .forms import EmailTemplateForm, EnrollForm, MailboxSettingsForm, SequenceForm, StepForm
+from .models import (
+    EmailTemplate,
+    Enrollment,
+    InvalidTransition,
+    Mailbox,
+    Sequence,
+    SequenceStep,
+    scope_sequences,
+)
 from .providers import get_provider
 from .providers import gmail as gmail_provider
 from .providers import graph as graph_provider
@@ -197,3 +209,276 @@ def mailbox_test_send(request, pk):
     except Exception as exc:
         return hx_toast(f"Test send failed: {exc}", level="error")
     return hx_toast(f"Test email sent to {mailbox.email} — check the inbox.")
+
+
+# ---------------------------------------------------------------- sequences
+
+
+def sequences_list(request):
+    qs = (
+        scope_sequences(Sequence.objects.select_related("owner"), request.user)
+        .annotate(
+            step_count=Count("steps", distinct=True),
+            active_count=Count(
+                "enrollments", filter=Q(enrollments__status="active"), distinct=True
+            ),
+            replied_count=Count(
+                "enrollments", filter=Q(enrollments__status="replied"), distinct=True
+            ),
+            finished_count=Count(
+                "enrollments", filter=Q(enrollments__status="finished"), distinct=True
+            ),
+        )
+        .order_by("name")
+    )
+    context = {"sequences": qs}
+    template = "outreach/_sequences_table.html" if request.htmx else "outreach/sequences_list.html"
+    return render(request, template, context)
+
+
+def sequence_create(request):
+    if request.method == "POST":
+        form = SequenceForm(request.POST)
+        if form.is_valid():
+            sequence = form.save(commit=False)
+            sequence.owner = request.user
+            sequence.save()
+            response = hx_toast("Sequence created — add steps.", extra_events={"close-modal": True})
+            response["HX-Redirect"] = reverse("sequence-detail", args=[sequence.pk])
+            return response
+    else:
+        form = SequenceForm()
+    return render(
+        request,
+        "pipeline/_modal_form.html",
+        {"form": form, "modal_title": "New sequence", "action": reverse("sequence-create")},
+    )
+
+
+def _get_sequence(request, pk):
+    return get_object_or_404(scope_sequences(Sequence.objects, request.user), pk=pk)
+
+
+def _steps_with_days(sequence):
+    """Step cards read 'Day N · template' (UI_SPEC §3) — N is cumulative wait."""
+    steps = list(sequence.steps.select_related("template"))
+    day = 0
+    for step in steps:
+        day += step.wait_days
+        step.day = day
+    return steps
+
+
+def sequence_detail(request, pk):
+    sequence = _get_sequence(request, pk)
+    context = {
+        "sequence": sequence,
+        "steps": _steps_with_days(sequence),
+        "locked": sequence.is_locked,
+        "step_form": StepForm(),
+        "status_filter": request.GET.get("status", ""),
+        "statuses": Enrollment.Status.choices,
+        "enrollments": _sequence_enrollments(sequence, request.GET.get("status", "")),
+    }
+    return render(request, "outreach/sequence_detail.html", context)
+
+
+def sequence_steps(request, pk):
+    sequence = _get_sequence(request, pk)
+    context = {
+        "sequence": sequence,
+        "steps": _steps_with_days(sequence),
+        "locked": sequence.is_locked,
+        "step_form": StepForm(),
+    }
+    return render(request, "outreach/_steps.html", context)
+
+
+def _sequence_enrollments(sequence, status):
+    qs = sequence.enrollments.select_related("contact", "mailbox").order_by("-created_at")
+    if status:
+        qs = qs.filter(status=status)
+    return qs[:100]
+
+
+def sequence_enrollments(request, pk):
+    sequence = _get_sequence(request, pk)
+    status = request.GET.get("status", "")
+    context = {
+        "sequence": sequence,
+        "status_filter": status,
+        "statuses": Enrollment.Status.choices,
+        "enrollments": _sequence_enrollments(sequence, status),
+    }
+    return render(request, "outreach/_enrollments.html", context)
+
+
+@require_POST
+def sequence_toggle(request, pk):
+    sequence = _get_sequence(request, pk)
+    sequence.is_active = not sequence.is_active
+    sequence.save(update_fields=["is_active", "updated_at"])
+    state = "active" if sequence.is_active else "inactive"
+    return hx_toast(f"Sequence is now {state}.", extra_events={"refresh-steps": True})
+
+
+@require_POST
+def sequence_clone(request, pk):
+    source = _get_sequence(request, pk)
+    clone = Sequence.objects.create(
+        name=f"{source.name} (copy)", owner=request.user, is_active=source.is_active
+    )
+    SequenceStep.objects.bulk_create(
+        SequenceStep(
+            sequence=clone, order=step.order, wait_days=step.wait_days, template=step.template
+        )
+        for step in source.steps.all()
+    )
+    response = hx_toast("Sequence cloned — this copy is editable.")
+    response["HX-Redirect"] = reverse("sequence-detail", args=[clone.pk])
+    return response
+
+
+@require_POST
+def step_add(request, pk):
+    sequence = _get_sequence(request, pk)
+    if sequence.is_locked:
+        return hx_toast("Sequence has enrollments — clone it to edit.", level="error")
+    form = StepForm(request.POST)
+    if not form.is_valid():
+        return hx_toast("Pick a template and a wait.", level="error")
+    step = form.save(commit=False)
+    step.sequence = sequence
+    step.order = (sequence.steps.aggregate(m=Max("order"))["m"] or 0) + 1
+    step.save()
+    return hx_toast(f"Step {step.order} added.", extra_events={"refresh-steps": True})
+
+
+@require_POST
+def step_delete(request, pk):
+    step = get_object_or_404(
+        SequenceStep.objects.filter(
+            sequence__in=scope_sequences(Sequence.objects, request.user)
+        ).select_related("sequence"),
+        pk=pk,
+    )
+    if step.sequence.is_locked:
+        return hx_toast("Sequence has enrollments — clone it to edit.", level="error")
+    step.delete()
+    return hx_toast("Step removed.", extra_events={"refresh-steps": True})
+
+
+def step_preview(request, pk):
+    step = get_object_or_404(
+        SequenceStep.objects.filter(
+            sequence__in=scope_sequences(Sequence.objects, request.user)
+        ).select_related("template"),
+        pk=pk,
+    )
+    template = step.template
+    context = {
+        "step": step,
+        "subject": render_string(template.subject, SAMPLE_CONTEXT),
+        "body_html": render_string(template.body_html, SAMPLE_CONTEXT, autoescape=True),
+        "sample": SAMPLE_CONTEXT,
+    }
+    return render(request, "outreach/_step_preview.html", context)
+
+
+# ---------------------------------------------------------------- enrollment
+
+
+def enroll_modal(request):
+    contact_ids = request.GET.getlist("cid")
+    contacts = scope_to_user(Contact.objects, request.user).filter(pk__in=contact_ids)
+    if not contacts:
+        return hx_toast("Select at least one contact first.", level="error")
+    form = EnrollForm(request.user)
+    context = {"form": form, "contacts": contacts}
+    return render(request, "outreach/_enroll_modal.html", context)
+
+
+@require_POST
+def enroll(request):
+    form = EnrollForm(request.user, request.POST)
+    contacts = scope_to_user(Contact.objects, request.user).filter(
+        pk__in=request.POST.getlist("cid")
+    )
+    if not form.is_valid() or not contacts:
+        return hx_toast("Pick a sequence and a sending mailbox.", level="error")
+    sequence = form.cleaned_data["sequence"]
+    mailbox = form.cleaned_data["mailbox"]
+    created = skipped = 0
+    for contact in contacts:
+        if contact.unsubscribed_at or contact.bounced_at:
+            skipped += 1
+            continue
+        try:
+            with transaction.atomic():  # ride the partial-unique constraint (DATA_SPEC §3)
+                enrollment = Enrollment.objects.create(
+                    contact=contact,
+                    sequence=sequence,
+                    mailbox=mailbox,
+                    enrolled_by=request.user,
+                    next_send_at=timezone.now(),  # step 1 due now, window-gated (2.6)
+                )
+        except IntegrityError:
+            skipped += 1
+            continue
+        Activity.objects.create(
+            contact=contact,
+            lead=contact.open_lead,
+            type=Activity.Type.ENROLLED,
+            actor=request.user,
+            payload={"sequence": sequence.name, "enrollment_id": enrollment.pk},
+        )
+        created += 1
+    msg = f"Enrolled {created} contact{'s' if created != 1 else ''} in {sequence.name}."
+    if skipped:
+        msg += f" Skipped {skipped} (already enrolled, unsubscribed, or bounced)."
+    return hx_toast(
+        msg,
+        level="success" if created else "error",
+        extra_events={
+            "close-modal": True,
+            "refresh-enrollments": True,
+            "refresh-timeline": True,
+        },
+    )
+
+
+@require_POST
+def enrollment_action(request, pk):
+    enrollment = get_object_or_404(
+        scope_to_user(Enrollment.objects, request.user, field="contact__owner"), pk=pk
+    )
+    action = request.POST.get("action")
+    try:
+        if action == "pause":
+            enrollment.pause()
+        elif action == "resume":
+            enrollment.resume()
+        elif action == "stop":
+            enrollment.mark_finished()
+        else:
+            return hx_toast("Unknown action.", level="error")
+    except InvalidTransition:
+        return hx_toast(
+            f"Cannot {action} a {enrollment.get_status_display().lower()} enrollment.",
+            level="error",
+        )
+    return hx_toast(
+        f"Enrollment {enrollment.get_status_display().lower()}.",
+        extra_events={"refresh-enrollments": True},
+    )
+
+
+def contact_enrollments(request, pk):
+    """Right-rail card on contact detail (UI_SPEC §3)."""
+    contact = get_object_or_404(scope_to_user(Contact.objects, request.user), pk=pk)
+    enrollments = contact.enrollments.select_related("sequence", "mailbox").order_by("-created_at")
+    return render(
+        request,
+        "outreach/_contact_enrollments.html",
+        {"contact": contact, "enrollments": enrollments},
+    )
