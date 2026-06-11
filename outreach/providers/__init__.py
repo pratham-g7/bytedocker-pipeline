@@ -12,7 +12,11 @@ def get_provider(mailbox) -> MailProvider:
         from .gmail import GmailProvider
 
         return GmailProvider(mailbox)
-    raise ValueError(f"No provider for {mailbox.provider!r}")  # GraphProvider lands in 2.4
+    if mailbox.provider == mailbox.Provider.OUTLOOK:
+        from .graph import GraphProvider
+
+        return GraphProvider(mailbox)
+    raise ValueError(f"No provider for {mailbox.provider!r}")
 
 
 __all__ = ["MailProvider", "ProviderAuthError", "TransientProviderError", "get_provider"]

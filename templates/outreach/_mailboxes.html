@@ -23,7 +23,8 @@
         </div>
       </div>
       {% if m.status == 'error' %}
-        <a href="{% url 'gmail-connect' %}" class="btn-primary">Reconnect</a>
+        <a href="{% if m.provider == 'gmail' %}{% url 'gmail-connect' %}{% else %}{% url 'outlook-connect' %}{% endif %}"
+           class="btn-primary">Reconnect</a>
       {% else %}
         <button hx-post="{% url 'mailbox-test-send' m.pk %}"
                 class="btn-secondary">Test send</button>

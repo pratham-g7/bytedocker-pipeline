@@ -9,13 +9,18 @@
     {% else %}
       <span class="btn-secondary cursor-not-allowed opacity-50" title="Set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET to enable">Connect Gmail</span>
     {% endif %}
-    <span class="btn-secondary cursor-not-allowed opacity-50" title="Outlook arrives with task 2.4">Connect Outlook</span>
+    {% if outlook_configured %}
+      <a href="{% url 'outlook-connect' %}" class="btn-primary shrink-0">Connect Outlook</a>
+    {% else %}
+      <span class="btn-secondary cursor-not-allowed opacity-50" title="Set MS_CLIENT_ID / MS_CLIENT_SECRET to enable">Connect Outlook</span>
+    {% endif %}
   </div>
 </div>
-{% if not gmail_configured %}
+{% if not gmail_configured or not outlook_configured %}
   <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-    OAuth credentials are not configured — set <code>GOOGLE_CLIENT_ID</code> and
-    <code>GOOGLE_CLIENT_SECRET</code> in the environment to enable Gmail connect.
+    {% if not gmail_configured %}Gmail connect needs <code>GOOGLE_CLIENT_ID</code> + <code>GOOGLE_CLIENT_SECRET</code>.{% endif %}
+    {% if not outlook_configured %}Outlook connect needs <code>MS_CLIENT_ID</code> + <code>MS_CLIENT_SECRET</code>.{% endif %}
+    Set them in the environment to enable the buttons.
   </div>
 {% endif %}
 <div id="mailboxes" hx-get="{% url 'mailboxes' %}" hx-trigger="refresh-mailboxes from:body" hx-target="this">

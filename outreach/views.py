@@ -1,3 +1,5 @@
+import secrets
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Count
@@ -11,6 +13,7 @@ from .forms import EmailTemplateForm, MailboxSettingsForm
 from .models import EmailTemplate, Mailbox
 from .providers import get_provider
 from .providers import gmail as gmail_provider
+from .providers import graph as graph_provider
 from .rendering import SAMPLE_CONTEXT, render_string, validate_merge_fields
 
 # ---------------------------------------------------------------- templates
@@ -79,8 +82,8 @@ def template_preview(request):
 # ---------------------------------------------------------------- mailboxes
 
 
-def _gmail_redirect_uri():
-    return settings.BASE_URL.rstrip("/") + reverse("gmail-callback")
+def _redirect_uri(url_name):
+    return settings.BASE_URL.rstrip("/") + reverse(url_name)
 
 
 def mailboxes_settings(request):
@@ -88,6 +91,7 @@ def mailboxes_settings(request):
     context = {
         "mailboxes": request.user.mailboxes.order_by("email"),
         "gmail_configured": bool(settings.GOOGLE_CLIENT_ID),
+        "outlook_configured": bool(settings.MS_CLIENT_ID),
     }
     template = "outreach/_mailboxes.html" if request.htmx else "outreach/mailboxes.html"
     return render(request, template, context)
@@ -96,13 +100,41 @@ def mailboxes_settings(request):
 def gmail_connect(request):
     if not settings.GOOGLE_CLIENT_ID:
         return redirect("mailboxes")  # button is disabled; belt-and-braces
-    url, state = gmail_provider.authorization_url(_gmail_redirect_uri())
+    url, state = gmail_provider.authorization_url(_redirect_uri("gmail-callback"))
     request.session["gmail_oauth_state"] = state
     return redirect(url)
 
 
 def gmail_callback(request):
-    state = request.session.pop("gmail_oauth_state", None)
+    return _finish_oauth_callback(
+        request,
+        gmail_provider,
+        Mailbox.Provider.GMAIL,
+        state_key="gmail_oauth_state",
+        redirect_uri=_redirect_uri("gmail-callback"),
+    )
+
+
+def outlook_connect(request):
+    if not settings.MS_CLIENT_ID:
+        return redirect("mailboxes")
+    state = secrets.token_urlsafe(24)
+    request.session["ms_oauth_state"] = state
+    return redirect(graph_provider.authorization_url(_redirect_uri("outlook-callback"), state))
+
+
+def outlook_callback(request):
+    return _finish_oauth_callback(
+        request,
+        graph_provider,
+        Mailbox.Provider.OUTLOOK,
+        state_key="ms_oauth_state",
+        redirect_uri=_redirect_uri("outlook-callback"),
+    )
+
+
+def _finish_oauth_callback(request, provider_module, provider, state_key, redirect_uri):
+    state = request.session.pop(state_key, None)
     if (
         "code" not in request.GET
         or "error" in request.GET
@@ -110,13 +142,13 @@ def gmail_callback(request):
         or request.GET.get("state") != state
     ):
         return redirect("mailboxes")  # denied consent / stale state — no mailbox change
-    token_json = gmail_provider.exchange_code(_gmail_redirect_uri(), request.GET["code"])
-    email = gmail_provider.profile_email(token_json).lower()
+    token_json = provider_module.exchange_code(redirect_uri, request.GET["code"])
+    email = provider_module.profile_email(token_json).lower()
     mailbox, _ = Mailbox.objects.update_or_create(
         email=email,
         defaults={
             "user": request.user,
-            "provider": Mailbox.Provider.GMAIL,
+            "provider": provider,
             "status": Mailbox.Status.ACTIVE,  # reconnect clears a previous error
         },
     )

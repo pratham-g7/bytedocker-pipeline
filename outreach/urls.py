@@ -10,6 +10,12 @@ urlpatterns = [
     path("settings/mailboxes/", views.mailboxes_settings, name="mailboxes"),
     path("settings/mailboxes/gmail/connect/", views.gmail_connect, name="gmail-connect"),
     path("settings/mailboxes/gmail/callback/", views.gmail_callback, name="gmail-callback"),
+    path("settings/mailboxes/outlook/connect/", views.outlook_connect, name="outlook-connect"),
+    path(
+        "settings/mailboxes/outlook/callback/",
+        views.outlook_callback,
+        name="outlook-callback",
+    ),
     path("settings/mailboxes/<int:pk>/edit/", views.mailbox_edit, name="mailbox-edit"),
     path(
         "settings/mailboxes/<int:pk>/test-send/",
