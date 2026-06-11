@@ -1,6 +1,7 @@
 import factory
 from django.utils import timezone
 
+from outreach.models import EmailTemplate, Enrollment, Mailbox, Message, Sequence, SequenceStep
 from pipeline.models import Activity, Company, Contact, Lead, Stage, Task
 
 
@@ -63,3 +64,61 @@ class TaskFactory(factory.django.DjangoModelFactory):
     owner = factory.SelfAttribute("lead.owner")
     title = factory.Sequence(lambda n: f"Task {n}")
     due_at = factory.LazyFunction(timezone.now)
+
+
+class MailboxFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Mailbox
+
+    user = factory.SubFactory(UserFactory)
+    provider = Mailbox.Provider.GMAIL
+    email = factory.Sequence(lambda n: f"mailbox{n}@example.com")
+
+
+class EmailTemplateFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = EmailTemplate
+
+    name = factory.Sequence(lambda n: f"Template {n}")
+    subject = "Quick question, {{first_name|there}}"
+    body_html = "<p>Hi {{first_name|there}}, saw {{company}} is growing.</p><p>{{sender_name}}</p>"
+
+
+class SequenceFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Sequence
+
+    name = factory.Sequence(lambda n: f"Sequence {n}")
+    owner = factory.SubFactory(UserFactory)
+
+
+class SequenceStepFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SequenceStep
+
+    sequence = factory.SubFactory(SequenceFactory)
+    order = factory.Sequence(lambda n: n + 1)
+    wait_days = 2
+    template = factory.SubFactory(EmailTemplateFactory)
+
+
+class EnrollmentFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Enrollment
+
+    contact = factory.SubFactory(ContactFactory)
+    sequence = factory.SubFactory(SequenceFactory)
+    mailbox = factory.SubFactory(MailboxFactory)
+    enrolled_by = factory.SelfAttribute("sequence.owner")
+    next_send_at = factory.LazyFunction(timezone.now)
+
+
+class MessageFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Message
+
+    enrollment = factory.SubFactory(EnrollmentFactory)
+    step = factory.SubFactory(
+        SequenceStepFactory, sequence=factory.SelfAttribute("..enrollment.sequence")
+    )
+    mailbox = factory.SelfAttribute("enrollment.mailbox")
