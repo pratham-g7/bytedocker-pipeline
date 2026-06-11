@@ -55,6 +55,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "outreach.context_processors.mailbox_alerts",
             ],
         },
     },
@@ -110,3 +111,9 @@ CELERY_TASK_ALWAYS_EAGER = env.bool("CELERY_TASK_ALWAYS_EAGER", default=False)
 # Encrypts Mailbox OAuth tokens at rest (see core.crypto). Empty = warning at startup,
 # hard error on first use.
 FIELD_ENCRYPTION_KEY = env("FIELD_ENCRYPTION_KEY", default="")
+
+# Mailbox OAuth (Phase 2). Empty client id = connect button disabled, never a 500.
+# BASE_URL builds the OAuth redirect URIs (and Phase 3 tracking links).
+BASE_URL = env("BASE_URL", default="http://localhost:8000")
+GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID", default="")
+GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET", default="")

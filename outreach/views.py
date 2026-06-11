@@ -1,13 +1,16 @@
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Count
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from core.http import hx_toast
 
-from .forms import EmailTemplateForm
-from .models import EmailTemplate
+from .forms import EmailTemplateForm, MailboxSettingsForm
+from .models import EmailTemplate, Mailbox
+from .providers import get_provider
+from .providers import gmail as gmail_provider
 from .rendering import SAMPLE_CONTEXT, render_string, validate_merge_fields
 
 # ---------------------------------------------------------------- templates
@@ -71,3 +74,94 @@ def template_preview(request):
         "sample": SAMPLE_CONTEXT,
     }
     return render(request, "outreach/_preview.html", context)
+
+
+# ---------------------------------------------------------------- mailboxes
+
+
+def _gmail_redirect_uri():
+    return settings.BASE_URL.rstrip("/") + reverse("gmail-callback")
+
+
+def mailboxes_settings(request):
+    """Personal page: each user manages only their own mailboxes (UI_SPEC §5)."""
+    context = {
+        "mailboxes": request.user.mailboxes.order_by("email"),
+        "gmail_configured": bool(settings.GOOGLE_CLIENT_ID),
+    }
+    template = "outreach/_mailboxes.html" if request.htmx else "outreach/mailboxes.html"
+    return render(request, template, context)
+
+
+def gmail_connect(request):
+    if not settings.GOOGLE_CLIENT_ID:
+        return redirect("mailboxes")  # button is disabled; belt-and-braces
+    url, state = gmail_provider.authorization_url(_gmail_redirect_uri())
+    request.session["gmail_oauth_state"] = state
+    return redirect(url)
+
+
+def gmail_callback(request):
+    state = request.session.pop("gmail_oauth_state", None)
+    if (
+        "code" not in request.GET
+        or "error" in request.GET
+        or not state
+        or request.GET.get("state") != state
+    ):
+        return redirect("mailboxes")  # denied consent / stale state — no mailbox change
+    token_json = gmail_provider.exchange_code(_gmail_redirect_uri(), request.GET["code"])
+    email = gmail_provider.profile_email(token_json).lower()
+    mailbox, _ = Mailbox.objects.update_or_create(
+        email=email,
+        defaults={
+            "user": request.user,
+            "provider": Mailbox.Provider.GMAIL,
+            "status": Mailbox.Status.ACTIVE,  # reconnect clears a previous error
+        },
+    )
+    mailbox.token = token_json  # encrypted at rest via core.crypto
+    mailbox.save(update_fields=["oauth_token", "updated_at"])
+    return redirect("mailboxes")
+
+
+def mailbox_edit(request, pk):
+    mailbox = get_object_or_404(request.user.mailboxes, pk=pk)
+    if request.method == "POST":
+        form = MailboxSettingsForm(request.POST, instance=mailbox)
+        if form.is_valid():
+            form.save()
+            return hx_toast(
+                "Mailbox settings saved.",
+                extra_events={"close-modal": True, "refresh-mailboxes": True},
+            )
+    else:
+        form = MailboxSettingsForm(instance=mailbox)
+    return render(
+        request,
+        "pipeline/_modal_form.html",
+        {
+            "form": form,
+            "modal_title": f"Mailbox settings — {mailbox.email}",
+            "action": reverse("mailbox-edit", args=[mailbox.pk]),
+        },
+    )
+
+
+@require_POST
+def mailbox_test_send(request, pk):
+    """Manual deliverability check (BACKLOG 2.3 AC): sends a real email to the mailbox itself."""
+    mailbox = get_object_or_404(request.user.mailboxes, pk=pk)
+    if mailbox.status != Mailbox.Status.ACTIVE or not mailbox.oauth_token:
+        return hx_toast("Mailbox is not connected — reconnect first.", level="error")
+    provider = get_provider(mailbox)
+    try:
+        provider.send(
+            to=mailbox.email,
+            subject="Bytedocker test send",
+            html="<p>Your mailbox is connected and can send. 🐳</p>",
+            text="Your mailbox is connected and can send.",
+        )
+    except Exception as exc:
+        return hx_toast(f"Test send failed: {exc}", level="error")
+    return hx_toast(f"Test email sent to {mailbox.email} — check the inbox.")
