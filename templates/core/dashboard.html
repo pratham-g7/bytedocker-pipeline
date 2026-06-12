@@ -1,33 +1,70 @@
 {% extends "base.html" %}
+{% load ui %}
 {% block page_title %}Dashboard{% endblock %}
 {% block content %}
-<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-  <div class="rounded-xl bg-white p-5 shadow-sm">
-    <div class="text-sm text-slate-500">Open leads</div>
-    <div class="mt-1 text-3xl font-bold">—</div>
-    <div class="mt-2 text-xs text-slate-400">Arrives in Phase 1</div>
+<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+  <div class="card">
+    <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Open leads</div>
+    <div class="mt-2 font-display text-3xl font-bold text-ink">{{ open_leads }}</div>
+    <a href="{% url 'board' %}" class="mt-2 inline-block text-xs text-neutral-400 hover:text-accent">View board →</a>
   </div>
-  <div class="rounded-xl bg-white p-5 shadow-sm">
-    <div class="text-sm text-slate-500">Sends today</div>
-    <div class="mt-1 text-3xl font-bold">—</div>
-    <div class="mt-2 text-xs text-slate-400">Arrives in Phase 2</div>
+  <div class="card">
+    <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">In sequence</div>
+    <div class="mt-2 font-display text-3xl font-bold text-ink">{{ active_enrollments }}</div>
+    <a href="{% url 'sequences' %}" class="mt-2 inline-block text-xs text-neutral-400 hover:text-accent">View sequences →</a>
   </div>
-  <div class="rounded-xl bg-white p-5 shadow-sm">
-    <div class="text-sm text-slate-500">Recent replies</div>
-    <div class="mt-1 text-3xl font-bold">—</div>
-    <div class="mt-2 text-xs text-slate-400">Arrives in Phase 3</div>
+  <div class="card">
+    <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Sends today</div>
+    <div class="mt-2 font-display text-3xl font-bold text-ink">{{ sends_today }}</div>
+    <div class="mt-2 text-xs text-neutral-400">of {{ daily_cap }} daily cap</div>
+  </div>
+  <div class="card">
+    <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Replied</div>
+    <div class="mt-2 font-display text-3xl font-bold text-ink">{{ replied }}</div>
+    <div class="mt-2 text-xs text-neutral-400">reply detection lands in Phase 3</div>
   </div>
 </div>
 
-<div class="mt-6 rounded-xl bg-white p-5 shadow-sm">
-  <h2 class="mb-2 text-sm font-semibold">Phase 0 wiring check</h2>
-  <p class="mb-4 text-sm text-slate-500">
-    Clicking this fires an HTMX POST; the server responds with an
-    <code class="rounded bg-slate-100 px-1">HX-Trigger</code> header and Alpine renders the toast.
-  </p>
-  <button hx-post="{% url 'toast-demo' %}" hx-swap="none"
-          class="rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500">
-    Test toast
-  </button>
+<div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+  <div class="card">
+    <h2 class="mb-3 text-sm font-semibold">My tasks</h2>
+    <ul class="divide-y divide-neutral-100">
+      {% for task in my_tasks %}
+      <li class="flex items-center justify-between gap-3 py-2.5 text-sm">
+        <div class="min-w-0">
+          <div class="truncate">{{ task.title }}</div>
+          <a href="{% url 'contact-detail' task.lead.contact_id %}"
+             class="text-xs text-neutral-400 hover:text-accent">{{ task.lead.contact.full_name }}</a>
+        </div>
+        <span class="shrink-0 text-xs {% if task.due_at < now %}font-medium text-red-600{% else %}text-neutral-400{% endif %}">
+          {{ task.due_at|date:"M j" }}
+        </span>
+      </li>
+      {% empty %}
+      <li class="py-6 text-center text-sm text-neutral-400">Nothing due — enjoy the quiet.</li>
+      {% endfor %}
+    </ul>
+    <a href="{% url 'tasks' %}" class="link mt-2 inline-block text-xs">All tasks →</a>
+  </div>
+
+  <div class="card">
+    <h2 class="mb-3 text-sm font-semibold">Recent activity</h2>
+    <ul class="divide-y divide-neutral-100">
+      {% for a in activities %}
+      <li class="flex items-start gap-2.5 py-2.5 text-sm">
+        <span class="mt-0.5 text-xs">{{ a.type|activity_icon }}</span>
+        <div class="min-w-0">
+          <a href="{% url 'contact-detail' a.contact_id %}" class="font-medium hover:underline">{{ a.contact.full_name }}</a>
+          <span class="text-neutral-500">— {{ a|activity_text }}</span>
+          <div class="text-xs text-neutral-400">{{ a.ts|timesince }} ago</div>
+        </div>
+      </li>
+      {% empty %}
+      <li class="py-6 text-center text-sm text-neutral-400">
+        No activity yet — <a href="{% url 'imports' %}" class="link">import a CSV</a> to get moving.
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
 </div>
 {% endblock %}

@@ -5,10 +5,10 @@
     <span class="text-lg leading-none">{{ a.type|activity_icon }}</span>
     <div class="min-w-0">
       <div class="text-sm">{{ a|activity_text }}</div>
-      <div class="text-xs text-slate-400">{{ a.ts|date:"M j, Y H:i" }}{% if a.actor %} · {{ a.actor.email }}{% endif %}</div>
+      <div class="text-xs text-neutral-400">{{ a.ts|date:"M j, Y H:i" }}{% if a.actor %} · {{ a.actor.email }}{% endif %}</div>
     </div>
   </li>
   {% empty %}
-  <li class="card p-6 text-center text-sm text-slate-400">No activity yet.</li>
+  <li class="card p-6 text-center text-sm text-neutral-400">No activity yet.</li>
   {% endfor %}
 </ul>

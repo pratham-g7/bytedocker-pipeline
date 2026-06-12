@@ -2,7 +2,7 @@
 {% block page_title %}Stage settings{% endblock %}
 {% block content %}
 <div class="max-w-xl">
-  <p class="mb-4 text-sm text-slate-500">
+  <p class="mb-4 text-sm text-neutral-500">
     Stages define the pipeline board columns. Won/Lost stages are fixed.
   </p>
   <form hx-post="{% url 'stage-add' %}" hx-target="#stages-list"

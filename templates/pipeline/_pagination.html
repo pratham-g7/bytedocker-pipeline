@@ -1,7 +1,7 @@
 {% load ui %}
 {% if page.paginator.num_pages > 1 %}
 <div class="mt-3 flex items-center justify-end gap-2 text-sm">
-  <span class="text-slate-500">Page {{ page.number }} / {{ page.paginator.num_pages }}
+  <span class="text-neutral-500">Page {{ page.number }} / {{ page.paginator.num_pages }}
     · {{ page.paginator.count }} total</span>
   {% if page.has_previous %}
     <a class="btn-secondary cursor-pointer" hx-get="?{% qs_replace page=page.previous_page_number %}"

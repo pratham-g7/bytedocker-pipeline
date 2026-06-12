@@ -5,30 +5,40 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Log in — Bytedocker</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+  <link rel="preload" href="{% static 'fonts/montserrat-800.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
-<body class="flex min-h-screen items-center justify-center bg-slate-100">
-  <div class="w-full max-w-sm rounded-xl bg-white p-8 shadow">
-    <h1 class="mb-6 text-xl font-bold tracking-tight">
-      Bytedocker <span class="text-sky-500">🐳</span>
-    </h1>
+<body class="relative min-h-screen overflow-hidden bg-white text-neutral-900 antialiased">
+
+  {% include "_constellation.html" with class="pointer-events-none absolute -right-10 -top-8 w-[420px] text-neutral-200" %}
+  {% include "_constellation.html" with class="pointer-events-none absolute -bottom-8 -left-10 w-[340px] rotate-180 text-neutral-200" %}
+
+  <div class="relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6">
+    <div class="mb-10">
+      <div class="wordmark text-2xl text-ink">Bytedocker</div>
+      <div class="mt-2 text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-400">Pipeline</div>
+      <div class="mt-6 h-px w-full bg-neutral-900"></div>
+    </div>
+
     {% if form.errors %}
-      <div class="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-        Invalid email or password.
+      <div class="mb-5 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+        <span class="badge-dot bg-red-500"></span> Invalid email or password.
       </div>
     {% endif %}
+
     <form method="post">
       {% csrf_token %}
-      <label class="mb-1 block text-sm font-medium" for="id_username">Email</label>
-      <input id="id_username" name="username" type="email" autofocus required
-             class="mb-4 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-      <label class="mb-1 block text-sm font-medium" for="id_password">Password</label>
-      <input id="id_password" name="password" type="password" required
-             class="mb-6 w-full rounded-md border border-slate-300 px-3 py-2 text-sm">
-      <button class="w-full rounded-md bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-700">
-        Log in
-      </button>
+      <label class="mb-1.5 block text-sm font-medium" for="id_username">Email</label>
+      <input id="id_username" name="username" type="email" autofocus required class="input mb-5">
+      <label class="mb-1.5 block text-sm font-medium" for="id_password">Password</label>
+      <input id="id_password" name="password" type="password" required class="input mb-8">
+      <button class="btn-primary w-full py-2.5">Log in</button>
     </form>
+
+    <div class="mt-12 border-t border-neutral-200 pt-4 text-xs text-neutral-400">
+      Internal pipeline — contact@bytedocker.com
+    </div>
   </div>
 </body>
 </html>

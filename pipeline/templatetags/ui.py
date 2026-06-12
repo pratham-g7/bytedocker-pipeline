@@ -47,3 +47,15 @@ def qs_replace(context, **kwargs):
     for key, value in kwargs.items():
         params[key] = value
     return params.urlencode()
+
+
+@register.simple_tag(takes_context=True)
+def nav_active(context, *prefixes):
+    """Returns 'nav-active' when the current path matches a prefix ('/' = exact)."""
+    path = context["request"].path
+    for prefix in prefixes:
+        if prefix == "/" and path == "/":
+            return "nav-active"
+        if prefix != "/" and path.startswith(prefix):
+            return "nav-active"
+    return ""

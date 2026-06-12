@@ -4,12 +4,12 @@
     <div class="mb-3">
       <label class="mb-1 block text-sm font-medium" for="{{ field.id_for_label }}">{{ field.label }}</label>
       {{ field }}
-      {% if field.help_text %}<p class="mt-1 text-xs text-slate-400">{{ field.help_text }}</p>{% endif %}
+      {% if field.help_text %}<p class="mt-1 text-xs text-neutral-400">{{ field.help_text }}</p>{% endif %}
       {% for error in field.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
     </div>
   {% endfor %}
   {% for error in form.non_field_errors %}<p class="mb-2 text-xs text-red-600">{{ error }}</p>{% endfor %}
-  <p class="mb-3 text-xs text-slate-400">{% verbatim %}
+  <p class="mb-3 text-xs text-neutral-400">{% verbatim %}
     Merge fields: <code>{{first_name}}</code> <code>{{last_name}}</code>
     <code>{{full_name}}</code> <code>{{company}}</code>
     <code>{{title}}</code> <code>{{sender_name}}</code> —

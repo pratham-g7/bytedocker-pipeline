@@ -1,21 +1,21 @@
 <div class="card overflow-hidden p-0">
   <table class="w-full">
-    <thead class="bg-slate-50">
+    <thead class="bg-neutral-50">
       <tr>
         <th class="th">Name</th><th class="th">Subject</th>
         <th class="th">Used by steps</th><th class="th">Updated</th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-slate-100">
+    <tbody class="divide-y divide-neutral-100">
       {% for t in templates %}
-      <tr class="hover:bg-slate-50">
+      <tr class="hover:bg-neutral-50">
         <td class="td"><a class="font-medium hover:underline" href="{% url 'template-edit' t.pk %}">{{ t.name }}</a></td>
-        <td class="td text-slate-500">{{ t.subject|truncatechars:60 }}</td>
+        <td class="td text-neutral-500">{{ t.subject|truncatechars:60 }}</td>
         <td class="td">{{ t.step_count }}</td>
-        <td class="td text-slate-500">{{ t.updated_at|date:"M j, Y" }}</td>
+        <td class="td text-neutral-500">{{ t.updated_at|date:"M j, Y" }}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="4" class="td py-10 text-center text-slate-400">No templates yet — create one to start a sequence.</td></tr>
+      <tr><td colspan="4" class="td py-10 text-center text-neutral-400">No templates yet — create one to start a sequence.</td></tr>
       {% endfor %}
     </tbody>
   </table>

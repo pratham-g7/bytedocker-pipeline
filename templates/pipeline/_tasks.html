@@ -5,7 +5,7 @@
   <li class="card flex items-center justify-between gap-3 border-l-4 border-red-400 p-3">
     <div>
       <div class="text-sm font-medium">{{ task.title }}</div>
-      <div class="text-xs text-slate-400">
+      <div class="text-xs text-neutral-400">
         <a class="hover:underline" href="{% url 'contact-detail' task.lead.contact_id %}">{{ task.lead.contact.full_name }}</a>
         · due {{ task.due_at|date:"M j, H:i" }}
       </div>
@@ -22,7 +22,7 @@
   <li class="card flex items-center justify-between gap-3 p-3">
     <div>
       <div class="text-sm font-medium">{{ task.title }}</div>
-      <div class="text-xs text-slate-400">
+      <div class="text-xs text-neutral-400">
         <a class="hover:underline" href="{% url 'contact-detail' task.lead.contact_id %}">{{ task.lead.contact.full_name }}</a>
         · due {{ task.due_at|date:"M j, H:i" }}
       </div>
@@ -30,20 +30,20 @@
     <button hx-post="{% url 'task-toggle' task.pk %}" hx-swap="none" class="btn-secondary shrink-0">Done</button>
   </li>
   {% empty %}
-  <li class="card p-6 text-center text-sm text-slate-400">Nothing upcoming. Add tasks from a contact page.</li>
+  <li class="card p-6 text-center text-sm text-neutral-400">Nothing upcoming. Add tasks from a contact page.</li>
   {% endfor %}
 </ul>
 
 {% if done %}
-<h2 class="mb-2 text-sm font-semibold text-slate-400">Recently completed</h2>
+<h2 class="mb-2 text-sm font-semibold text-neutral-400">Recently completed</h2>
 <ul class="space-y-2">
   {% for task in done %}
   <li class="card flex items-center justify-between gap-3 p-3 opacity-60">
     <div>
       <div class="text-sm line-through">{{ task.title }}</div>
-      <div class="text-xs text-slate-400">done {{ task.done_at|date:"M j, H:i" }}</div>
+      <div class="text-xs text-neutral-400">done {{ task.done_at|date:"M j, H:i" }}</div>
     </div>
-    <button hx-post="{% url 'task-toggle' task.pk %}" hx-swap="none" class="text-xs text-slate-400 hover:underline">Reopen</button>
+    <button hx-post="{% url 'task-toggle' task.pk %}" hx-swap="none" class="text-xs text-neutral-400 hover:underline">Reopen</button>
   </li>
   {% endfor %}
 </ul>

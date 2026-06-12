@@ -4,10 +4,10 @@
 <div class="card mb-6 flex items-start justify-between">
   <div>
     <h1 class="text-xl font-bold">{{ company.name }}</h1>
-    <div class="text-sm text-slate-500">
+    <div class="text-sm text-neutral-500">
       {{ company.domain|default:"" }}{% if company.industry %} · {{ company.industry }}{% endif %}{% if company.location %} · {{ company.location }}{% endif %}
     </div>
-    {% if company.size %}<div class="mt-1 text-sm text-slate-400">Size: {{ company.size }}</div>{% endif %}
+    {% if company.size %}<div class="mt-1 text-sm text-neutral-400">Size: {{ company.size }}</div>{% endif %}
   </div>
   <button hx-get="{% url 'company-edit' company.pk %}" hx-target="#modal-slot" class="btn-secondary">Edit</button>
 </div>
@@ -15,19 +15,19 @@
 <h2 class="mb-2 text-sm font-semibold">Contacts</h2>
 <div class="card overflow-hidden p-0">
   <table class="w-full">
-    <thead class="bg-slate-50">
+    <thead class="bg-neutral-50">
       <tr><th class="th">Name</th><th class="th">Email</th><th class="th">Title</th><th class="th">Owner</th></tr>
     </thead>
-    <tbody class="divide-y divide-slate-100">
+    <tbody class="divide-y divide-neutral-100">
       {% for c in contacts %}
-      <tr class="hover:bg-slate-50">
+      <tr class="hover:bg-neutral-50">
         <td class="td"><a class="font-medium hover:underline" href="{% url 'contact-detail' c.pk %}">{{ c.full_name }}</a></td>
         <td class="td">{{ c.email }}</td>
         <td class="td">{{ c.title|default:"—" }}</td>
         <td class="td">{{ c.owner.email|default:"—" }}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="4" class="td py-8 text-center text-slate-400">No contacts at this company.</td></tr>
+      <tr><td colspan="4" class="td py-8 text-center text-neutral-400">No contacts at this company.</td></tr>
       {% endfor %}
     </tbody>
   </table>

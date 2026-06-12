@@ -3,8 +3,8 @@
 {% block content %}
 <div class="mb-4 flex items-center justify-between gap-4">
   <div>
-    <h1 class="text-lg font-bold">{{ sequence.name }}</h1>
-    <div class="text-sm text-slate-500">Owner: {{ sequence.owner.email }}</div>
+    <h1 class="font-display text-lg font-bold">{{ sequence.name }}</h1>
+    <div class="text-sm text-neutral-500">Owner: {{ sequence.owner.email }}</div>
   </div>
   <div class="flex items-center gap-2">
     {% if locked %}

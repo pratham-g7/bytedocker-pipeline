@@ -2,43 +2,43 @@
   <div class="mb-3 flex items-center justify-between">
     <h2 class="text-sm font-semibold">Steps</h2>
     {% if locked %}
-      <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700"
-            title="Steps freeze once a sequence has enrollments — clone to edit.">Locked</span>
+      <span class="badge" title="Steps freeze once a sequence has enrollments — clone to edit.">
+        <span class="badge-dot bg-amber-500"></span>Locked</span>
     {% endif %}
   </div>
   <ol class="space-y-2">
     {% for step in steps %}
-    <li class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2">
+    <li class="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 px-3 py-2">
       <div class="text-sm">
         <span class="font-medium">Day {{ step.day }}</span>
-        <span class="text-slate-400">·</span> {{ step.template.name }}
+        <span class="text-neutral-400">·</span> {{ step.template.name }}
       </div>
       <div class="flex items-center gap-3">
         <button hx-get="{% url 'step-preview' step.pk %}" hx-target="#modal-slot"
-                class="text-sm text-sky-600 hover:underline">preview</button>
+                class="text-sm link">preview</button>
         {% if not locked %}
         <button hx-post="{% url 'step-delete' step.pk %}" hx-swap="none"
-                class="text-sm text-slate-400 hover:text-red-600">remove</button>
+                class="text-sm text-neutral-400 hover:text-red-600">remove</button>
         {% endif %}
       </div>
     </li>
     {% empty %}
-    <li class="py-6 text-center text-sm text-slate-400">No steps yet — add the first email below.</li>
+    <li class="py-6 text-center text-sm text-neutral-400">No steps yet — add the first email below.</li>
     {% endfor %}
   </ol>
   {% if not locked %}
   <form hx-post="{% url 'step-add' sequence.pk %}" hx-swap="none" class="mt-4 flex items-end gap-2">
     <div class="flex-1">
-      <label class="mb-1 block text-xs font-medium text-slate-500">Template</label>
+      <label class="mb-1 block text-xs font-medium text-neutral-500">Template</label>
       {{ step_form.template }}
     </div>
     <div class="w-28">
-      <label class="mb-1 block text-xs font-medium text-slate-500">Wait (days)</label>
+      <label class="mb-1 block text-xs font-medium text-neutral-500">Wait (days)</label>
       {{ step_form.wait_days }}
     </div>
     <button class="btn-primary shrink-0">Add step</button>
   </form>
   {% else %}
-  <p class="mt-4 text-xs text-slate-400">This sequence has enrollments, so its steps are frozen — use “Clone to edit”.</p>
+  <p class="mt-4 text-xs text-neutral-400">This sequence has enrollments, so its steps are frozen — use “Clone to edit”.</p>
   {% endif %}
 </div>

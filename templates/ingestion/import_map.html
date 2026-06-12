@@ -7,7 +7,7 @@
     {% csrf_token %}
     <div class="card mb-4 overflow-x-auto p-0">
       <table class="w-full">
-        <thead class="bg-slate-50">
+        <thead class="bg-neutral-50">
           <tr>{% for col in columns %}<th class="th">{{ col.header }}</th>{% endfor %}</tr>
           <tr>
             {% for col in columns %}
@@ -22,15 +22,15 @@
             {% endfor %}
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100">
+        <tbody class="divide-y divide-neutral-100">
           {% for row in preview %}
-          <tr>{% for cell in row %}<td class="td text-slate-500">{{ cell|truncatechars:30 }}</td>{% endfor %}</tr>
+          <tr>{% for cell in row %}<td class="td text-neutral-500">{{ cell|truncatechars:30 }}</td>{% endfor %}</tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
     <div class="flex items-center justify-between">
-      <p class="text-sm text-slate-500">
+      <p class="text-sm text-neutral-500">
         Dedupe: existing emails get blank fields filled, never overwritten. Re-imports are idempotent.
       </p>
       <button class="btn-primary">Run import</button>

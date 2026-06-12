@@ -1,60 +1,74 @@
-{% load static %}
+{% load static ui %}
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Bytedocker{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+  <link rel="preload" href="{% static 'fonts/inter-400.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/montserrat-800.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <script defer src="{% static 'vendor/htmx.min.js' %}"></script>
   <script defer src="{% static 'vendor/alpine.min.js' %}"></script>
 </head>
-<body class="bg-slate-100 text-slate-900 antialiased"
+<body class="bg-neutral-50 text-neutral-900 antialiased"
       hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 <div class="flex min-h-screen">
 
-  <aside class="flex w-56 flex-col bg-slate-900 text-slate-300">
-    <div class="px-5 py-5 text-lg font-bold tracking-tight text-white">
-      Bytedocker <span class="text-sky-400">🐳</span>
+  <aside class="relative flex w-60 flex-col overflow-hidden bg-ink">
+    <div class="px-6 pb-2 pt-7">
+      <div class="wordmark text-[15px] leading-none text-white">Bytedocker</div>
+      <div class="mt-1.5 text-[10px] font-medium uppercase tracking-[0.3em] text-neutral-500">Pipeline</div>
     </div>
-    <nav class="flex-1 space-y-1 px-3 text-sm">
-      <a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a>
-      <a href="{% url 'board' %}" class="nav-link">Board</a>
-      <a href="{% url 'contacts' %}" class="nav-link">Contacts</a>
-      <a href="{% url 'leads' %}" class="nav-link">Leads</a>
-      <a href="{% url 'companies' %}" class="nav-link">Companies</a>
-      <a href="{% url 'sequences' %}" class="nav-link">Sequences</a>
-      <a href="{% url 'templates' %}" class="nav-link">Templates</a>
-      <a href="{% url 'imports' %}" class="nav-link">Imports</a>
-      <a href="{% url 'tasks' %}" class="nav-link">Tasks</a>
-      <a href="#" class="nav-disabled">Reports</a>
+    <nav class="relative z-10 flex-1 px-3 pt-4">
+      <a href="{% url 'dashboard' %}" class="nav-link {% nav_active '/' %}">Dashboard</a>
+
+      <div class="nav-section">Pipeline</div>
+      <a href="{% url 'board' %}" class="nav-link {% nav_active '/board/' %}">Board</a>
+      <a href="{% url 'leads' %}" class="nav-link {% nav_active '/leads/' %}">Leads</a>
+      <a href="{% url 'contacts' %}" class="nav-link {% nav_active '/contacts/' %}">Contacts</a>
+      <a href="{% url 'companies' %}" class="nav-link {% nav_active '/companies/' %}">Companies</a>
+      <a href="{% url 'tasks' %}" class="nav-link {% nav_active '/tasks/' %}">Tasks</a>
+      <a href="{% url 'imports' %}" class="nav-link {% nav_active '/imports/' %}">Imports</a>
+
+      <div class="nav-section">Outreach</div>
+      <a href="{% url 'sequences' %}" class="nav-link {% nav_active '/sequences/' %}">Sequences</a>
+      <a href="{% url 'templates' %}" class="nav-link {% nav_active '/templates/' %}">Templates</a>
+      <a href="{% url 'mailboxes' %}" class="nav-link {% nav_active '/settings/mailboxes/' %}">Mailboxes</a>
+      <span class="nav-disabled" title="Arrives in Phase 4">Reports</span>
     </nav>
-    <div class="border-t border-slate-800 px-3 py-3 text-sm">
-      <a href="{% url 'mailboxes' %}" class="nav-link">Mailboxes</a>
+    <div class="relative z-10 border-t border-white/10 px-3 py-3">
       {% if user.role == "admin" %}
-        <a href="{% url 'stages-settings' %}" class="nav-link">Stage settings</a>
+        <a href="{% url 'stages-settings' %}" class="nav-link {% nav_active '/settings/stages/' %}">Stage settings</a>
       {% endif %}
       {% if user.is_staff %}
         <a href="{% url 'admin:index' %}" class="nav-link">Admin</a>
       {% endif %}
     </div>
+    {% include "_constellation.html" with class="pointer-events-none absolute -bottom-10 -left-16 w-64 rotate-180 text-white/[0.07]" %}
   </aside>
 
-  <div class="flex flex-1 flex-col">
-    <header class="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3">
-      <div class="text-sm font-medium text-slate-500">{% block page_title %}{% endblock %}</div>
+  <div class="flex min-w-0 flex-1 flex-col">
+    <header class="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-3">
+      <div class="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
+        {% block page_title %}{% endblock %}
+      </div>
       <div class="flex items-center gap-4 text-sm">
-        <span class="text-slate-600">{{ user.email }}</span>
+        <span class="text-neutral-500">{{ user.email }}</span>
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
-          <button class="btn-secondary py-1">Log out</button>
+          <button class="btn-secondary px-2.5 py-1 text-xs">Log out</button>
         </form>
       </div>
     </header>
     {% if error_mailboxes %}
-    <div class="border-b border-red-200 bg-red-50 px-6 py-2 text-sm text-red-800">
-      {% for m in error_mailboxes %}{{ m.email }}{% if not forloop.last %}, {% endif %}{% endfor %}
-      lost its connection — sequence sends are paused for it.
+    <div class="flex items-center gap-2 border-b border-red-200 bg-red-50 px-6 py-2 text-sm text-red-800">
+      <span class="badge-dot bg-red-500"></span>
+      <span>
+        {% for m in error_mailboxes %}{{ m.email }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        lost its connection — sequence sends are paused for it.
+      </span>
       <a href="{% url 'mailboxes' %}" class="font-medium underline">Reconnect</a>
     </div>
     {% endif %}
@@ -68,9 +82,10 @@
      @toast.window="toasts.push($event.detail); setTimeout(() => toasts.shift(), 4000)"
      class="fixed bottom-4 right-4 z-50 space-y-2">
   <template x-for="(t, i) in toasts" :key="i">
-    <div class="rounded-lg px-4 py-3 text-sm text-white shadow-lg"
-         :class="t.level === 'error' ? 'bg-red-600' : 'bg-emerald-600'"
-         x-text="t.msg"></div>
+    <div class="flex max-w-sm items-center gap-2.5 rounded-lg bg-ink px-4 py-3 text-sm text-white shadow-lg">
+      <span class="badge-dot" :class="t.level === 'error' ? 'bg-red-400' : 'bg-emerald-400'"></span>
+      <span x-text="t.msg"></span>
+    </div>
   </template>
 </div>
 

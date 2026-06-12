@@ -9,33 +9,33 @@
           class="flex flex-wrap items-center gap-2">
       {% csrf_token %}
       <input type="file" name="file" accept=".csv,text/csv" required
-             class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-700">
+             class="text-sm file:mr-3 file:rounded-md file:border-0 file:bg-neutral-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-neutral-700">
       <input name="source_label" class="input w-48" placeholder="Source label (optional)">
       <button class="btn-primary">Upload & map</button>
     </form>
-    <p class="mt-2 text-xs text-slate-400">Max 5 MB. You'll map columns before anything is imported.</p>
+    <p class="mt-2 text-xs text-neutral-400">Max 5 MB. You'll map columns before anything is imported.</p>
   </div>
 
   <h2 class="mb-2 text-sm font-semibold">History</h2>
   <div class="card overflow-hidden p-0">
     <table class="w-full">
-      <thead class="bg-slate-50">
+      <thead class="bg-neutral-50">
         <tr><th class="th">File</th><th class="th">Status</th><th class="th">Created</th>
             <th class="th">Updated</th><th class="th">Skipped</th><th class="th">Errors</th><th class="th">When</th></tr>
       </thead>
-      <tbody class="divide-y divide-slate-100">
+      <tbody class="divide-y divide-neutral-100">
         {% for job in jobs %}
-        <tr class="hover:bg-slate-50">
+        <tr class="hover:bg-neutral-50">
           <td class="td"><a class="font-medium hover:underline" href="{% url 'import-detail' job.pk %}">{{ job.filename }}</a></td>
           <td class="td">{{ job.get_status_display }}</td>
           <td class="td">{{ job.created_contacts }}</td>
           <td class="td">{{ job.updated_contacts }}</td>
           <td class="td">{{ job.skipped }}</td>
           <td class="td">{{ job.errored }}</td>
-          <td class="td text-slate-400">{{ job.created_at|date:"M j, H:i" }}</td>
+          <td class="td text-neutral-400">{{ job.created_at|date:"M j, H:i" }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="7" class="td py-8 text-center text-slate-400">No imports yet.</td></tr>
+        <tr><td colspan="7" class="td py-8 text-center text-neutral-400">No imports yet.</td></tr>
         {% endfor %}
       </tbody>
     </table>

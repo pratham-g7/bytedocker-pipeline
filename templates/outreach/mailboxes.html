@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% block page_title %}Mailboxes{% endblock %}
 {% block content %}
-<div class="mb-4 flex items-center justify-between gap-4">
-  <p class="text-sm text-slate-500">Sequences send from these connected accounts.</p>
-  <div class="flex items-center gap-2">
+<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <p class="text-sm text-neutral-500">Sequences send from these connected accounts.</p>
+  <div class="flex flex-wrap items-center gap-2">
     {% if gmail_configured %}
-      <a href="{% url 'gmail-connect' %}" class="btn-primary shrink-0">Connect Gmail</a>
+      <a href="{% url 'gmail-connect' %}" class="btn-primary whitespace-nowrap">Connect Gmail</a>
     {% else %}
-      <span class="btn-secondary cursor-not-allowed opacity-50" title="Set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET to enable">Connect Gmail</span>
+      <span class="btn-secondary cursor-not-allowed whitespace-nowrap opacity-50" title="Set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET to enable">Connect Gmail</span>
     {% endif %}
     {% if outlook_configured %}
-      <a href="{% url 'outlook-connect' %}" class="btn-primary shrink-0">Connect Outlook</a>
+      <a href="{% url 'outlook-connect' %}" class="btn-primary whitespace-nowrap">Connect Outlook</a>
     {% else %}
-      <span class="btn-secondary cursor-not-allowed opacity-50" title="Set MS_CLIENT_ID / MS_CLIENT_SECRET to enable">Connect Outlook</span>
+      <span class="btn-secondary cursor-not-allowed whitespace-nowrap opacity-50" title="Set MS_CLIENT_ID / MS_CLIENT_SECRET to enable">Connect Outlook</span>
     {% endif %}
   </div>
 </div>

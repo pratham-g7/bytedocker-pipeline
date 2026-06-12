@@ -25,7 +25,8 @@ def test_dashboard_renders_for_authenticated_user(client, user):
     client.force_login(user)
     response = client.get(reverse("dashboard"))
     assert response.status_code == 200
-    assert b"Phase 0 wiring check" in response.content
+    assert b"Open leads" in response.content
+    assert b"Sends today" in response.content
 
 
 def test_toast_demo_sets_hx_trigger(client, user):

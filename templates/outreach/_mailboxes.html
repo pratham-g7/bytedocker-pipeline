@@ -4,21 +4,21 @@
     <div>
       <div class="flex items-center gap-2">
         <span class="font-medium">{{ m.email }}</span>
-        <span class="rounded-full px-2 py-0.5 text-xs font-medium
-          {% if m.status == 'active' %}bg-emerald-100 text-emerald-700
-          {% elif m.status == 'error' %}bg-red-100 text-red-700
-          {% else %}bg-slate-100 text-slate-600{% endif %}">{{ m.get_status_display }}</span>
-        <span class="text-xs uppercase tracking-wide text-slate-400">{{ m.get_provider_display }}</span>
+        <span class="badge"><span class="badge-dot
+          {% if m.status == 'active' %}bg-emerald-500
+          {% elif m.status == 'error' %}bg-red-500
+          {% else %}bg-neutral-300{% endif %}"></span>{{ m.get_status_display }}</span>
+        <span class="text-xs uppercase tracking-wide text-neutral-400">{{ m.get_provider_display }}</span>
       </div>
-      <div class="mt-1 text-xs text-slate-500">
+      <div class="mt-1 text-xs text-neutral-500">
         Window {{ m.send_window_start|time:"H:i" }}–{{ m.send_window_end|time:"H:i" }} · {{ m.timezone }}
       </div>
     </div>
     <div class="flex items-center gap-4">
       <div class="text-right">
-        <div class="text-xs text-slate-500">{{ m.sends_today }} / {{ m.daily_cap }} today</div>
-        <div class="mt-1 h-1.5 w-32 rounded bg-slate-100">
-          <div class="h-1.5 rounded {% if m.sends_today >= m.daily_cap %}bg-red-500{% else %}bg-sky-500{% endif %}"
+        <div class="text-xs text-neutral-500">{{ m.sends_today }} / {{ m.daily_cap }} today</div>
+        <div class="mt-1 h-1.5 w-32 rounded bg-neutral-100">
+          <div class="h-1.5 rounded {% if m.sends_today >= m.daily_cap %}bg-red-500{% else %}bg-accent{% endif %}"
                style="width: {% widthratio m.sends_today m.daily_cap 100 %}%"></div>
         </div>
       </div>
@@ -30,11 +30,11 @@
                 class="btn-secondary">Test send</button>
       {% endif %}
       <button hx-get="{% url 'mailbox-edit' m.pk %}" hx-target="#modal-slot"
-              class="text-sm text-slate-400 hover:text-slate-700">Edit</button>
+              class="text-sm text-neutral-400 hover:text-neutral-700">Edit</button>
     </div>
   </div>
   {% empty %}
-  <div class="card py-10 text-center text-sm text-slate-400">
+  <div class="card py-10 text-center text-sm text-neutral-400">
     No mailboxes connected yet — connect a Gmail account to start sending sequences.
   </div>
   {% endfor %}
