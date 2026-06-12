@@ -78,7 +78,7 @@ def _prime_state(client, value="state-123"):
 
 def test_callback_stores_encrypted_token_and_activates(client, rep, monkeypatch):
     token_json = json.dumps({"token": "acc", "refresh_token": "ref"})
-    monkeypatch.setattr(gmail_module, "exchange_code", lambda uri, code: token_json)
+    monkeypatch.setattr(gmail_module, "exchange_code", lambda uri, code, **kw: token_json)
     monkeypatch.setattr(gmail_module, "profile_email", lambda tok: "Rep@Gmail.com")
     client.force_login(rep)
     _prime_state(client)
@@ -95,7 +95,7 @@ def test_callback_stores_encrypted_token_and_activates(client, rep, monkeypatch)
 
 def test_callback_reconnect_clears_error_status(client, rep, monkeypatch):
     MailboxFactory(user=rep, email="rep@gmail.com", status=Mailbox.Status.ERROR)
-    monkeypatch.setattr(gmail_module, "exchange_code", lambda uri, code: '{"token": "t"}')
+    monkeypatch.setattr(gmail_module, "exchange_code", lambda uri, code, **kw: '{"token": "t"}')
     monkeypatch.setattr(gmail_module, "profile_email", lambda tok: "rep@gmail.com")
     client.force_login(rep)
     _prime_state(client)

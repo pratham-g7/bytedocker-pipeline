@@ -112,8 +112,9 @@ def mailboxes_settings(request):
 def gmail_connect(request):
     if not settings.GOOGLE_CLIENT_ID:
         return redirect("mailboxes")  # button is disabled; belt-and-braces
-    url, state = gmail_provider.authorization_url(_redirect_uri("gmail-callback"))
+    url, state, code_verifier = gmail_provider.authorization_url(_redirect_uri("gmail-callback"))
     request.session["gmail_oauth_state"] = state
+    request.session["oauth_code_verifier"] = code_verifier  # PKCE, reused at callback
     return redirect(url)
 
 
@@ -147,6 +148,7 @@ def outlook_callback(request):
 
 def _finish_oauth_callback(request, provider_module, provider, state_key, redirect_uri):
     state = request.session.pop(state_key, None)
+    code_verifier = request.session.pop("oauth_code_verifier", None)
     if (
         "code" not in request.GET
         or "error" in request.GET
@@ -154,7 +156,9 @@ def _finish_oauth_callback(request, provider_module, provider, state_key, redire
         or request.GET.get("state") != state
     ):
         return redirect("mailboxes")  # denied consent / stale state — no mailbox change
-    token_json = provider_module.exchange_code(redirect_uri, request.GET["code"])
+    token_json = provider_module.exchange_code(
+        redirect_uri, request.GET["code"], code_verifier=code_verifier
+    )
     email = provider_module.profile_email(token_json).lower()
     mailbox, _ = Mailbox.objects.update_or_create(
         email=email,

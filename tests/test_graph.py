@@ -63,7 +63,7 @@ def test_connect_without_credentials_redirects_home(client, rep, settings):
 
 def test_callback_creates_outlook_mailbox(client, rep, monkeypatch):
     token_json = json.dumps({"access_token": "a", "refresh_token": "r", "expires_at": 1})
-    monkeypatch.setattr(graph_module, "exchange_code", lambda uri, code: token_json)
+    monkeypatch.setattr(graph_module, "exchange_code", lambda uri, code, **kw: token_json)
     monkeypatch.setattr(graph_module, "profile_email", lambda tok: "Rep@Outlook.com")
     client.force_login(rep)
     session = client.session

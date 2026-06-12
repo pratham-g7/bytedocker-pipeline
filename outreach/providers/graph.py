@@ -45,8 +45,12 @@ def authorization_url(redirect_uri: str, state: str) -> str:
     return f"{_authority()}/oauth2/v2.0/authorize?{params}"
 
 
-def exchange_code(redirect_uri: str, code: str) -> str:
-    """Trade the callback code for the token JSON Mailbox.token stores."""
+def exchange_code(redirect_uri: str, code: str, code_verifier: str | None = None) -> str:
+    """Trade the callback code for the token JSON Mailbox.token stores.
+
+    code_verifier is accepted for a uniform callback signature; Graph's
+    confidential-client flow uses the client secret, not PKCE.
+    """
     response = requests.post(
         f"{_authority()}/oauth2/v2.0/token",
         data={

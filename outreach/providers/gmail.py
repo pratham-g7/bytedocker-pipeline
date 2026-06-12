@@ -39,16 +39,23 @@ def _flow(redirect_uri: str) -> Flow:
     return Flow.from_client_config(client_config, scopes=SCOPES, redirect_uri=redirect_uri)
 
 
-def authorization_url(redirect_uri: str) -> tuple[str, str]:
-    """Returns (url, state). prompt=consent forces a refresh_token grant."""
-    return _flow(redirect_uri).authorization_url(
+def authorization_url(redirect_uri: str) -> tuple[str, str, str]:
+    """Returns (url, state, code_verifier). prompt=consent forces a refresh_token grant.
+
+    The PKCE code_verifier is generated here and must survive to exchange_code —
+    the callback builds a fresh Flow, so it's carried through the session.
+    """
+    flow = _flow(redirect_uri)
+    url, state = flow.authorization_url(
         access_type="offline", prompt="consent", include_granted_scopes="true"
     )
+    return url, state, flow.code_verifier
 
 
-def exchange_code(redirect_uri: str, code: str) -> str:
+def exchange_code(redirect_uri: str, code: str, code_verifier: str | None = None) -> str:
     """Trade the callback code for the authorized-user JSON Mailbox.token stores."""
     flow = _flow(redirect_uri)
+    flow.code_verifier = code_verifier  # PKCE pair from the authorize step
     flow.fetch_token(code=code)
     return flow.credentials.to_json()
 
