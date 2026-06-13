@@ -13,6 +13,7 @@ from django.views.decorators.http import require_POST
 from core.http import hx_toast
 from core.permissions import role_required, scope_to_user
 
+from .duplicates import find_duplicate_groups, merge_companies
 from .forms import CompanyForm, ContactForm, TaskForm
 from .models import Activity, Company, Contact, Lead, Stage, Task, create_open_lead
 
@@ -375,6 +376,30 @@ def stage_move(request, pk):
         stage.order, neighbor.order = neighbor.order, stage.order
         Stage.objects.bulk_update([stage, neighbor], ["order"])
     return _stages_response(request)
+
+
+@role_required("admin")
+def duplicate_companies(request):
+    context = {"groups": find_duplicate_groups()}
+    template = "pipeline/_duplicates.html" if request.htmx else "pipeline/duplicates.html"
+    return render(request, template, context)
+
+
+@role_required("admin")
+@require_POST
+def company_merge(request):
+    primary = get_object_or_404(Company, pk=request.POST.get("primary"))
+    duplicates = list(
+        Company.objects.filter(pk__in=request.POST.getlist("dup")).exclude(pk=primary.pk)
+    )
+    if not duplicates:
+        return hx_toast("Nothing to merge.", level="error")
+    moved = merge_companies(primary, duplicates, actor=request.user)
+    word = "company" if len(duplicates) == 1 else "companies"
+    return hx_toast(
+        f"Merged {len(duplicates)} {word} into {primary.name} — {moved} contact(s) moved.",
+        extra_events={"refresh-duplicates": True},
+    )
 
 
 @role_required("admin")

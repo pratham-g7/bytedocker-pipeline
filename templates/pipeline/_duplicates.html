@@ -1,0 +1,35 @@
+<div class="space-y-4">
+  {% for group in groups %}
+  <div class="card p-0">
+    <table class="w-full">
+      <thead class="bg-neutral-50">
+        <tr><th class="th">Company</th><th class="th">Domain</th><th class="th text-right">Contacts</th><th class="th"></th></tr>
+      </thead>
+      <tbody class="divide-y divide-neutral-100">
+        {% for company in group %}
+        <tr class="hover:bg-neutral-50">
+          <td class="td">
+            <a class="font-medium hover:underline" href="{% url 'company-detail' company.pk %}">{{ company.name }}</a>
+          </td>
+          <td class="td text-neutral-500">{{ company.domain|default:"—" }}</td>
+          <td class="td text-right">{{ company.num_contacts }}</td>
+          <td class="td text-right">
+            <form hx-post="{% url 'company-merge' %}" hx-swap="none"
+                  hx-confirm="Merge the other {{ group|length|add:'-1' }} into “{{ company.name }}”? This can't be undone.">
+              {% csrf_token %}
+              <input type="hidden" name="primary" value="{{ company.pk }}">
+              {% for other in group %}{% if other.pk != company.pk %}<input type="hidden" name="dup" value="{{ other.pk }}">{% endif %}{% endfor %}
+              <button class="btn-secondary py-1 text-xs">Keep this, merge rest</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% empty %}
+  <div class="card py-10 text-center text-sm text-neutral-400">
+    No duplicate companies found — your accounts look clean.
+  </div>
+  {% endfor %}
+</div>
