@@ -124,6 +124,12 @@ MS_TENANT = env("MS_TENANT", default="common")
 # Outreach guardrails (ENGINE_SPEC §7). Weekday-only sending is the v1 default.
 SEND_WEEKDAYS_ONLY = env.bool("SEND_WEEKDAYS_ONLY", default=True)
 
+# New-mailbox warmup: ramp the effective daily cap by MAILBOX_WARMUP_STEP each
+# mailbox-local day until it reaches the configured daily_cap. Toggle off here
+# (global) or per mailbox (Mailbox.warmup).
+MAILBOX_WARMUP = env.bool("MAILBOX_WARMUP", default=True)
+MAILBOX_WARMUP_STEP = env.int("MAILBOX_WARMUP_STEP", default=20)
+
 # Reply detection (ENGINE_SPEC §3): on a reply, advance the lead's stage to
 # REPLY_STAGE_NAME if it's currently earlier. Toggle off to leave the stage be.
 REPLY_ADVANCES_STAGE = env.bool("REPLY_ADVANCES_STAGE", default=True)

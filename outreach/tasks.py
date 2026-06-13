@@ -68,7 +68,7 @@ def dispatch_due_sends(now=None):
                 enrollment.next_send_at = window_open(mailbox, now) + positive_jitter()
                 enrollment.save(update_fields=["next_send_at", "updated_at"])
                 continue
-            if mailbox.sends_today >= mailbox.daily_cap:
+            if mailbox.sends_today >= mailbox.effective_cap(now):  # warmup-aware (§7)
                 enrollment.next_send_at = next_window_open(mailbox, now) + positive_jitter()
                 enrollment.save(update_fields=["next_send_at", "updated_at"])
                 continue

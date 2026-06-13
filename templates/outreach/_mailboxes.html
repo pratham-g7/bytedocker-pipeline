@@ -16,11 +16,14 @@
     </div>
     <div class="flex items-center gap-4">
       <div class="text-right">
-        <div class="text-xs text-neutral-500">{{ m.sends_today }} / {{ m.daily_cap }} today</div>
+        <div class="text-xs text-neutral-500">{{ m.sends_today }} / {{ m.current_cap }} today</div>
         <div class="mt-1 h-1.5 w-32 rounded bg-neutral-100">
-          <div class="h-1.5 rounded {% if m.sends_today >= m.daily_cap %}bg-red-500{% else %}bg-accent{% endif %}"
-               style="width: {% widthratio m.sends_today m.daily_cap 100 %}%"></div>
+          <div class="h-1.5 rounded {% if m.sends_today >= m.current_cap %}bg-red-500{% else %}bg-accent{% endif %}"
+               style="width: {% widthratio m.sends_today m.current_cap 100 %}%"></div>
         </div>
+        {% if m.current_cap < m.daily_cap %}
+          <div class="mt-0.5 text-[10px] font-medium text-amber-600">warming up → {{ m.daily_cap }}/day</div>
+        {% endif %}
       </div>
       {% if m.status == 'error' %}
         <a href="{% if m.provider == 'gmail' %}{% url 'gmail-connect' %}{% else %}{% url 'outlook-connect' %}{% endif %}"

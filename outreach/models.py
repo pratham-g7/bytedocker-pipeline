@@ -7,6 +7,7 @@ Fernet-encrypted via the Mailbox.token property, never in plaintext.
 
 import uuid
 from datetime import time
+from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.db import models
@@ -49,6 +50,8 @@ class Mailbox(TimeStampedModel):
     # Mailbox-local date the daily counter was last reset for (ENGINE_SPEC §5:
     # per-tz correctness without a per-tz cron).
     counters_reset_on = models.DateField(null=True, blank=True)
+    # Soft warmup: ramp the effective cap from one step/day to daily_cap (§7).
+    warmup = models.BooleanField(default=True)
 
     class Meta:
         verbose_name_plural = "mailboxes"
@@ -56,6 +59,26 @@ class Mailbox(TimeStampedModel):
     def save(self, *args, **kwargs):
         self.email = self.email.strip().lower()
         super().save(*args, **kwargs)
+
+    def effective_cap(self, now=None) -> int:
+        """Today's send ceiling, ramped during warmup (ENGINE_SPEC §7).
+
+        New mailboxes start at one step/day and climb a step each mailbox-local
+        day until they reach daily_cap. Disabled per-mailbox (`warmup`) or
+        globally (MAILBOX_WARMUP).
+        """
+        if not (getattr(settings, "MAILBOX_WARMUP", True) and self.warmup):
+            return self.daily_cap
+        now = now or timezone.now()
+        tz = ZoneInfo(self.timezone or "UTC")
+        started = self.created_at.astimezone(tz).date()
+        days = max((now.astimezone(tz).date() - started).days, 0)  # 0 on the first day
+        step = getattr(settings, "MAILBOX_WARMUP_STEP", 20)
+        return min(self.daily_cap, step * (days + 1))
+
+    @property
+    def current_cap(self) -> int:
+        return self.effective_cap()
 
     @property
     def token(self) -> str:

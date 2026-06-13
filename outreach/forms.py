@@ -22,7 +22,7 @@ class EmailTemplateForm(StyledModelForm):
 class MailboxSettingsForm(StyledModelForm):
     class Meta:
         model = Mailbox
-        fields = ["daily_cap", "send_window_start", "send_window_end", "timezone"]
+        fields = ["daily_cap", "send_window_start", "send_window_end", "timezone", "warmup"]
         widgets = {
             "send_window_start": forms.TimeInput(attrs={"type": "time"}),
             "send_window_end": forms.TimeInput(attrs={"type": "time"}),
