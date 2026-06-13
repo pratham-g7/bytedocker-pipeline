@@ -144,3 +144,31 @@ COMPANY_NAME = env("COMPANY_NAME", default="Bytedocker")
 COMPANY_ADDRESS = env(
     "COMPANY_ADDRESS", default="Level 15, UB City, Concorde Towers, Bengaluru 560001"
 )
+
+# --- Production hardening (BACKLOG 4.5) -------------------------------------
+# Render terminates TLS at its proxy and forwards X-Forwarded-Proto.
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# --- Error tracking (BACKLOG 4.5) ------------------------------------------
+SENTRY_DSN = env("SENTRY_DSN", default="")
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration(), CeleryIntegration()],
+        traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.1),
+        send_default_pii=False,  # don't ship contact PII to Sentry
+        environment=env("SENTRY_ENV", default="production"),
+    )

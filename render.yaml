@@ -1,0 +1,110 @@
+# Render blueprint (BACKLOG 4.5). Deploy: connect this repo as a Blueprint in
+# the Render dashboard, then fill the `sync: false` secrets. Plans are starter-
+# tier; bump them in the dashboard as volume grows. See docs/DEPLOY.md.
+
+databases:
+  - name: bytedocker-db
+    plan: basic-256mb # managed Postgres includes daily backups (see docs/DEPLOY.md)
+    databaseName: bytedocker
+    user: bytedocker
+
+services:
+  # Redis broker for Celery
+  - type: keyvalue
+    name: bytedocker-redis
+    plan: starter
+    ipAllowList: [] # internal only
+
+  # Web (Django + gunicorn)
+  - type: web
+    name: bytedocker-web
+    runtime: python
+    plan: starter
+    buildCommand: "pip install -e . && python manage.py collectstatic --noinput"
+    preDeployCommand: "python manage.py migrate" # run once per deploy, before traffic shifts
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"
+    envVars:
+      - fromGroup: bytedocker
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bytedocker-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: bytedocker-redis
+          property: connectionString
+
+  # Celery worker (sender loop, reply polling, enrichment)
+  - type: worker
+    name: bytedocker-worker
+    runtime: python
+    plan: starter
+    buildCommand: "pip install -e ."
+    startCommand: "celery -A config worker -l info --concurrency 2"
+    envVars:
+      - fromGroup: bytedocker
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bytedocker-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: bytedocker-redis
+          property: connectionString
+
+  # Celery beat (scheduled jobs: dispatch, poll, counters, token refresh)
+  - type: worker
+    name: bytedocker-beat
+    runtime: python
+    plan: starter
+    buildCommand: "pip install -e ."
+    startCommand: "celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+    envVars:
+      - fromGroup: bytedocker
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bytedocker-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: bytedocker-redis
+          property: connectionString
+
+# Shared app config — secrets (sync:false) are filled in the dashboard per env.
+envVarGroups:
+  - name: bytedocker
+    envVars:
+      - key: DEBUG
+        value: "false"
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "false"
+      # Secrets / per-environment — set these in the Render dashboard:
+      - key: FIELD_ENCRYPTION_KEY # Fernet key; same value across all 3 services
+        sync: false
+      - key: ALLOWED_HOSTS # e.g. bytedocker-web.onrender.com,app.bytedocker.com
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS # e.g. https://app.bytedocker.com
+        sync: false
+      - key: BASE_URL # public https URL — OAuth redirects + tracking links
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: MS_CLIENT_ID
+        sync: false
+      - key: MS_CLIENT_SECRET
+        sync: false
+      - key: MS_TENANT
+        sync: false
+      - key: APOLLO_API_KEY
+        sync: false
