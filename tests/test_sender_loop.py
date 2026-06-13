@@ -353,6 +353,23 @@ def test_empty_rendered_subject_never_reaches_provider(provider):
     assert enrollment.status == Enrollment.Status.PAUSED
 
 
+# ---------------------------------------------------------------- tracking (3.3)
+
+
+def test_send_injects_open_pixel_and_wrapped_links(provider):
+    enrollment = _due_enrollment(steps=1)
+    step = enrollment.sequence.steps.get(order=1)
+    step.template.body_html = '<p><a href="https://acme.com/pricing">see pricing</a></p>'
+    step.template.save()
+
+    send_step(enrollment.pk, 1)
+
+    html = provider.send.call_args.kwargs["html"]
+    assert "/t/o/" in html  # open pixel appended
+    assert "/t/c/" in html  # link wrapped through the click redirect
+    assert 'href="https://acme.com/pricing"' not in html  # original href rewritten
+
+
 # ---------------------------------------------------------------- threading (2.8)
 
 
