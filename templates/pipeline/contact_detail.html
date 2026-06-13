@@ -15,7 +15,13 @@
           {% if contact.bounced_at %}<span class="badge"><span class="badge-dot bg-red-500"></span>Bounced</span>{% endif %}
         </div>
       </div>
-      <button hx-get="{% url 'contact-edit' contact.pk %}" hx-target="#modal-slot" class="btn-secondary">Edit</button>
+      <div class="flex shrink-0 items-center gap-2">
+        <a href="{% url 'contact-export' contact.pk %}" class="btn-secondary" title="Download a JSON export of this contact's data">Export</a>
+        <button hx-get="{% url 'contact-edit' contact.pk %}" hx-target="#modal-slot" class="btn-secondary">Edit</button>
+        <button hx-post="{% url 'contact-delete' contact.pk %}" hx-swap="none"
+                hx-confirm="Permanently delete {{ contact.email }} and all their data? This can't be undone."
+                class="btn-secondary text-red-600 hover:border-red-300 hover:bg-red-50">Delete</button>
+      </div>
     </div>
 
     <form hx-post="{% url 'contact-note-add' contact.pk %}" hx-swap="none"

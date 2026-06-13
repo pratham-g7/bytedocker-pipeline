@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Count, F, Max, Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
@@ -15,6 +15,7 @@ from core.permissions import role_required, scope_to_user
 
 from .duplicates import find_duplicate_groups, merge_companies
 from .forms import CompanyForm, ContactForm, TaskForm
+from .gdpr import contact_export_data
 from .models import Activity, Company, Contact, Lead, Stage, Task, create_open_lead
 
 # ---------------------------------------------------------------- contacts
@@ -105,6 +106,27 @@ def contact_detail(request, pk):
         "task_form": TaskForm(),
     }
     return render(request, "pipeline/contact_detail.html", context)
+
+
+def contact_export(request, pk):
+    """GDPR data export — JSON of the contact + everything linked (BACKLOG 4.6)."""
+    contact = get_object_or_404(
+        scope_to_user(Contact.objects.select_related("company", "owner"), request.user), pk=pk
+    )
+    response = JsonResponse(contact_export_data(contact), json_dumps_params={"indent": 2})
+    response["Content-Disposition"] = f'attachment; filename="contact-{contact.pk}-export.json"'
+    return response
+
+
+@require_POST
+def contact_delete(request, pk):
+    """GDPR delete — cascades leads, activities, enrollments, messages, tasks."""
+    contact = get_object_or_404(scope_to_user(Contact.objects, request.user), pk=pk)
+    email = contact.email
+    contact.delete()
+    response = hx_toast(f"Contact {email} deleted.")
+    response["HX-Redirect"] = reverse("contacts")
+    return response
 
 
 def contact_timeline(request, pk):
