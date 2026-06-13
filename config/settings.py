@@ -130,6 +130,10 @@ SEND_WEEKDAYS_ONLY = env.bool("SEND_WEEKDAYS_ONLY", default=True)
 MAILBOX_WARMUP = env.bool("MAILBOX_WARMUP", default=True)
 MAILBOX_WARMUP_STEP = env.int("MAILBOX_WARMUP_STEP", default=20)
 
+# Contact enrichment (BACKLOG 4.1). Per-team keys override this global fallback.
+APOLLO_API_KEY = env("APOLLO_API_KEY", default="")
+APOLLO_BASE_URL = env("APOLLO_BASE_URL", default="https://api.apollo.io")
+
 # Reply detection (ENGINE_SPEC §3): on a reply, advance the lead's stage to
 # REPLY_STAGE_NAME if it's currently earlier. Toggle off to leave the stage be.
 REPLY_ADVANCES_STAGE = env.bool("REPLY_ADVANCES_STAGE", default=True)

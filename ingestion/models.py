@@ -31,6 +31,7 @@ class ImportJob(TimeStampedModel):
     updated_contacts = models.PositiveIntegerField(default=0)
     created_companies = models.PositiveIntegerField(default=0)
     skipped = models.PositiveIntegerField(default=0)
+    queued = models.PositiveIntegerField(default=0)  # missing-email rows → enrichment queue
     errored = models.PositiveIntegerField(default=0)
     errors_csv = models.TextField(blank=True)
 
@@ -85,3 +86,35 @@ class IntakeSource(TimeStampedModel):
 
     def __str__(self):
         return self.name
+
+
+class EnrichmentTask(TimeStampedModel):
+    """A row that arrived without an email (e.g. a LinkedIn export), queued for
+    enrichment to resolve into a real Contact (BACKLOG 4.2)."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        RESOLVED = "resolved", "Resolved"
+        DISMISSED = "dismissed", "Dismissed"
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="enrichment_tasks"
+    )
+    first_name = models.CharField(max_length=80, blank=True)
+    last_name = models.CharField(max_length=80, blank=True)
+    title = models.CharField(max_length=120, blank=True)
+    company_name = models.CharField(max_length=200, blank=True)
+    company_domain = models.CharField(max_length=120, blank=True)
+    linkedin_url = models.URLField(blank=True)
+    source = models.CharField(max_length=60, blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    @property
+    def display_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip() or "(unnamed)"
+
+    def __str__(self):
+        return f"{self.display_name} @ {self.company_name or '?'}"

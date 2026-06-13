@@ -16,6 +16,8 @@
         </div>
       </div>
       <div class="flex shrink-0 items-center gap-2">
+        <button hx-post="{% url 'contact-enrich' contact.pk %}" hx-swap="none" class="btn-secondary"
+                title="Fill blank fields from the enrichment provider">Enrich</button>
         <a href="{% url 'contact-export' contact.pk %}" class="btn-secondary" title="Download a JSON export of this contact's data">Export</a>
         <button hx-get="{% url 'contact-edit' contact.pk %}" hx-target="#modal-slot" class="btn-secondary">Edit</button>
         <button hx-post="{% url 'contact-delete' contact.pk %}" hx-swap="none"

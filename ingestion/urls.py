@@ -11,6 +11,15 @@ urlpatterns = [
     # Intake (BACKLOG 3.5)
     path("ingest/webhook/<str:token>/", views.webhook_intake, name="webhook-intake"),
     path("forms/<slug:slug>/", views.capture_form, name="capture-form"),
+    path("contacts/<int:pk>/enrich/", views.contact_enrich, name="contact-enrich"),
+    path("enrichment/", views.enrichment_queue, name="enrichment-queue"),
+    path("enrichment/<int:pk>/resolve/", views.enrichment_resolve, name="enrichment-resolve"),
+    path("enrichment/<int:pk>/dismiss/", views.enrichment_dismiss, name="enrichment-dismiss"),
     path("settings/integrations/", views.integrations, name="integrations"),
     path("settings/integrations/new/", views.integration_create, name="integration-create"),
+    path(
+        "settings/integrations/enrichment/",
+        views.enrichment_settings,
+        name="enrichment-settings",
+    ),
 ]

@@ -13,6 +13,8 @@
     <dt class="text-neutral-500">Contacts updated</dt><dd>{{ job.updated_contacts }}</dd>
     <dt class="text-neutral-500">Companies created</dt><dd>{{ job.created_companies }}</dd>
     <dt class="text-neutral-500">Skipped (no change)</dt><dd>{{ job.skipped }}</dd>
+    <dt class="text-neutral-500">Queued for enrichment</dt>
+    <dd>{% if job.queued %}<a class="link" href="{% url 'enrichment-queue' %}">{{ job.queued }}</a>{% else %}0{% endif %}</dd>
     <dt class="text-neutral-500">Errors</dt>
     <dd>
       {{ job.errored }}

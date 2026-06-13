@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 
+import requests
 from django.conf import settings
 from django.contrib.auth.decorators import login_not_required
 from django.http import Http404, HttpResponse, HttpResponseForbidden, JsonResponse
@@ -12,10 +13,17 @@ from django.views.decorators.http import require_POST
 
 from core.http import hx_toast
 from core.permissions import role_required, scope_to_user
+from pipeline.models import Contact
 
+from .enrichment import (
+    EnrichmentUnavailable,
+    enrich_contact,
+    resolve_enrichment_task,
+    resolve_key,
+)
 from .forms import CaptureForm, IntakeSourceForm
 from .intake import intake_contact
-from .models import ImportJob, IntakeSource
+from .models import EnrichmentTask, ImportJob, IntakeSource
 from .services import TARGET_FIELDS, guess_mapping, parse_preview
 from .tasks import run_import_job
 
@@ -155,14 +163,93 @@ def capture_form(request, slug):
 # ---------------------------------------------------------------- integrations (admin)
 
 
+@require_POST
+def contact_enrich(request, pk):
+    """Fill a contact's blanks from the enrichment provider (BACKLOG 4.1)."""
+    contact = get_object_or_404(
+        scope_to_user(Contact.objects.select_related("company", "owner"), request.user), pk=pk
+    )
+    try:
+        matched = enrich_contact(contact)
+    except EnrichmentUnavailable:
+        return hx_toast("No enrichment key configured — set one under Integrations.", level="error")
+    except requests.RequestException as exc:
+        return hx_toast(f"Enrichment failed: {exc}", level="error")
+    if not matched:
+        return hx_toast("No enrichment match found for this contact.", level="error")
+    response = hx_toast("Contact enriched.")
+    response["HX-Refresh"] = "true"
+    return response
+
+
 @role_required("admin")
 def integrations(request):
     context = {
         "sources": IntakeSource.objects.select_related("owner", "auto_enroll", "mailbox"),
         "base_url": settings.BASE_URL.rstrip("/"),
+        "enrichment_configured": bool(resolve_key(request.user)),
+        "team": request.user.team,
     }
     template = "ingestion/_integrations.html" if request.htmx else "ingestion/integrations.html"
     return render(request, template, context)
+
+
+def enrichment_queue(request):
+    """Pending no-email leads awaiting enrichment (BACKLOG 4.2), scoped to owner."""
+    tasks = scope_to_user(
+        EnrichmentTask.objects.filter(status=EnrichmentTask.Status.PENDING),
+        request.user,
+        field="owner",
+    )
+    context = {"tasks": tasks}
+    template = (
+        "ingestion/_enrichment_queue.html" if request.htmx else "ingestion/enrichment_queue.html"
+    )
+    return render(request, template, context)
+
+
+@require_POST
+def enrichment_resolve(request, pk):
+    task = get_object_or_404(
+        scope_to_user(EnrichmentTask.objects, request.user, field="owner"),
+        pk=pk,
+        status=EnrichmentTask.Status.PENDING,
+    )
+    try:
+        contact = resolve_enrichment_task(task)
+    except EnrichmentUnavailable:
+        return hx_toast("No enrichment key configured — set one under Integrations.", level="error")
+    except requests.RequestException as exc:
+        return hx_toast(f"Enrichment failed: {exc}", level="error")
+    if contact is None:
+        return hx_toast("No email found for this lead.", level="error")
+    task.status = EnrichmentTask.Status.RESOLVED
+    task.save(update_fields=["status", "updated_at"])
+    return hx_toast(f"Resolved → {contact.email}", extra_events={"refresh-enrichment": True})
+
+
+@require_POST
+def enrichment_dismiss(request, pk):
+    task = get_object_or_404(
+        scope_to_user(EnrichmentTask.objects, request.user, field="owner"), pk=pk
+    )
+    task.status = EnrichmentTask.Status.DISMISSED
+    task.save(update_fields=["status", "updated_at"])
+    return hx_toast("Dismissed.", extra_events={"refresh-enrichment": True})
+
+
+@role_required("admin")
+@require_POST
+def enrichment_settings(request):
+    if not request.user.team_id:
+        return hx_toast(
+            "Assign yourself to a team to store a per-team enrichment key.", level="error"
+        )
+    team = request.user.team
+    team.enrichment_api_key = request.POST.get("enrichment_api_key", "").strip()
+    team.save(update_fields=["enrichment_api_key", "updated_at"])
+    msg = "Enrichment key saved." if team.enrichment_api_key else "Enrichment key cleared."
+    return hx_toast(msg, extra_events={"refresh-integrations": True})
 
 
 @role_required("admin")

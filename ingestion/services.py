@@ -31,19 +31,23 @@ TARGET_FIELDS = {
 
 CONTACT_FIELDS = ("first_name", "last_name", "title", "phone", "linkedin_url")
 
-# substrings used to auto-guess a mapping from CSV headers
+# substrings used to auto-guess a mapping from CSV headers (LinkedIn Sales
+# Navigator exports use "Profile Url" / "Person Linkedin Url" for the profile).
 AUTO_GUESS = [
     ("email", "email"),
     ("first", "first_name"),
     ("last", "last_name"),
     ("title", "title"),
+    ("position", "title"),
     ("phone", "phone"),
     ("linkedin", "linkedin_url"),
+    ("profile url", "linkedin_url"),
     ("domain", "company_domain"),
     ("website", "company_domain"),
     ("company", "company_name"),
     ("organisation", "company_name"),
     ("organization", "company_name"),
+    ("account name", "company_name"),
 ]
 
 
@@ -103,7 +107,8 @@ def _value(job: ImportJob, row: dict, target: str) -> str:
 def _import_row(job: ImportJob, row: dict) -> None:
     email = _value(job, row, "email").lower()
     if not email:
-        raise ValueError("missing email")
+        _queue_for_enrichment(job, row)  # LinkedIn-style rows with no email (BACKLOG 4.2)
+        return
     try:
         validate_email(email)
     except ValidationError:
@@ -146,6 +151,22 @@ def _import_row(job: ImportJob, row: dict) -> None:
         job.updated_contacts += 1
     else:
         job.skipped += 1
+
+
+def _queue_for_enrichment(job: ImportJob, row: dict) -> None:
+    from .models import EnrichmentTask
+
+    EnrichmentTask.objects.create(
+        owner=job.user,
+        source=job.source,
+        first_name=_value(job, row, "first_name"),
+        last_name=_value(job, row, "last_name"),
+        title=_value(job, row, "title"),
+        company_name=_value(job, row, "company_name"),
+        company_domain=_value(job, row, "company_domain"),
+        linkedin_url=_value(job, row, "linkedin_url"),
+    )
+    job.queued += 1
 
 
 def _resolve_company(job: ImportJob, row: dict) -> Company | None:

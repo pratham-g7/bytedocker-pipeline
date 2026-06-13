@@ -9,6 +9,8 @@ from .managers import UserManager
 
 class Team(TimeStampedModel):
     name = models.CharField(max_length=80, unique=True)
+    # Per-team enrichment provider key (BACKLOG 4.1). Falls back to APOLLO_API_KEY.
+    enrichment_api_key = models.CharField(max_length=200, blank=True)
 
     def __str__(self):
         return self.name

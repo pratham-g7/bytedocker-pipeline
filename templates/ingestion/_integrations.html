@@ -1,4 +1,22 @@
 <div class="space-y-3">
+  <div class="card">
+    <div class="flex items-center gap-2">
+      <h2 class="text-sm font-semibold">Contact enrichment</h2>
+      {% if enrichment_configured %}<span class="badge"><span class="badge-dot bg-emerald-500"></span>Key set</span>
+      {% else %}<span class="badge"><span class="badge-dot bg-neutral-300"></span>Not configured</span>{% endif %}
+    </div>
+    <p class="mt-1 text-xs text-neutral-500">
+      Apollo key for the <span class="font-medium">{{ team.name|default:"(no team)" }}</span> team —
+      used by the “Enrich” button to fill blank contact fields.
+    </p>
+    <form hx-post="{% url 'enrichment-settings' %}" hx-swap="none" class="mt-3 flex gap-2">
+      {% csrf_token %}
+      <input type="password" name="enrichment_api_key" placeholder="Paste Apollo API key…"
+             class="input max-w-md" autocomplete="off">
+      <button class="btn-secondary shrink-0">Save</button>
+    </form>
+  </div>
+
   {% for s in sources %}
   <div class="card">
     <div class="flex items-start justify-between gap-4">
