@@ -1,0 +1,35 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unsubscribe — Bytedocker</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="flex min-h-screen items-center justify-center bg-neutral-50 px-6 text-neutral-900 antialiased">
+  <div class="w-full max-w-md">
+    <div class="wordmark mb-6 text-lg text-ink">Bytedocker</div>
+    <div class="card">
+      {% if done %}
+        <h1 class="text-base font-semibold">You're unsubscribed</h1>
+        <p class="mt-2 text-sm text-neutral-500">
+          <span class="font-medium text-neutral-700">{{ contact.email }}</span>
+          won't receive any further emails from us. You can close this tab.
+        </p>
+      {% else %}
+        <h1 class="text-base font-semibold">Unsubscribe from emails?</h1>
+        <p class="mt-2 text-sm text-neutral-500">
+          Confirm that <span class="font-medium text-neutral-700">{{ contact.email }}</span>
+          should stop receiving emails from us.
+        </p>
+        <form method="post" class="mt-5">
+          {% csrf_token %}
+          <button class="btn-primary w-full">Unsubscribe</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

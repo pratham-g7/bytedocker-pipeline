@@ -128,3 +128,9 @@ SEND_WEEKDAYS_ONLY = env.bool("SEND_WEEKDAYS_ONLY", default=True)
 # REPLY_STAGE_NAME if it's currently earlier. Toggle off to leave the stage be.
 REPLY_ADVANCES_STAGE = env.bool("REPLY_ADVANCES_STAGE", default=True)
 REPLY_STAGE_NAME = env("REPLY_STAGE_NAME", default="Engaged")
+
+# CAN-SPAM unsubscribe footer (ENGINE_SPEC §4): name + physical address.
+COMPANY_NAME = env("COMPANY_NAME", default="Bytedocker")
+COMPANY_ADDRESS = env(
+    "COMPANY_ADDRESS", default="Level 15, UB City, Concorde Towers, Bengaluru 560001"
+)

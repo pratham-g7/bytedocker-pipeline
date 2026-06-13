@@ -370,6 +370,18 @@ def test_send_injects_open_pixel_and_wrapped_links(provider):
     assert 'href="https://acme.com/pricing"' not in html  # original href rewritten
 
 
+def test_send_includes_unsubscribe_footer_and_header(provider):
+    enrollment = _due_enrollment(steps=1)
+    send_step(enrollment.pk, 1)
+
+    kwargs = provider.send.call_args.kwargs
+    assert "/unsubscribe/" in kwargs["html"]  # footer link
+    assert "/unsubscribe/" in kwargs["text"]  # plain-text footer
+    headers = kwargs["headers"]
+    assert "/unsubscribe/" in headers["List-Unsubscribe"]
+    assert headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
+
+
 # ---------------------------------------------------------------- threading (2.8)
 
 

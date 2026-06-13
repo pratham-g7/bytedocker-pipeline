@@ -6,6 +6,7 @@ urlpatterns = [
     # Public tracking endpoints (ENGINE_SPEC §4) — no auth
     path("t/o/<uuid:uuid>.gif", public_views.track_open, name="track-open"),
     path("t/c/<uuid:uuid>/<str:sig>/", public_views.track_click, name="track-click"),
+    path("unsubscribe/<str:token>/", public_views.unsubscribe, name="unsubscribe"),
     path("templates/", views.templates_list, name="templates"),
     path("templates/new/", views.template_create, name="template-create"),
     path("templates/preview/", views.template_preview, name="template-preview"),

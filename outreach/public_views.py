@@ -6,13 +6,15 @@ via @login_not_required. Open/click timestamps are first-event-wins.
 
 from django.contrib.auth.decorators import login_not_required
 from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.shortcuts import render
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 
-from pipeline.models import Activity
+from pipeline.models import Activity, Contact
 
-from .models import Message
-from .tracking import TRANSPARENT_GIF, verify_click
+from .models import Enrollment, Message
+from .tracking import TRANSPARENT_GIF, parse_unsubscribe_token, verify_click
 
 
 def _gif_response() -> HttpResponse:
@@ -58,3 +60,37 @@ def track_click(request, uuid, sig):
             payload={"message_id": str(message.uuid), "url": url[:500]},
         )
     return HttpResponseRedirect(url)
+
+
+@login_not_required
+@csrf_exempt  # RFC 8058 one-click POST comes from the mail client, no CSRF token
+def unsubscribe(request, token):
+    """GET shows a confirm page; POST (footer button or one-click) suppresses (§4)."""
+    contact_id = parse_unsubscribe_token(token)
+    contact = Contact.objects.filter(pk=contact_id).first() if contact_id is not None else None
+    if contact is None:
+        raise Http404
+    if request.method == "POST":
+        _suppress(contact)
+    context = {"contact": contact, "done": contact.unsubscribed_at is not None}
+    return render(request, "outreach/unsubscribe.html", context)
+
+
+def _suppress(contact):
+    """Set unsubscribed_at + terminal-ize live enrollments (idempotent)."""
+    already = contact.unsubscribed_at is not None
+    if not already:
+        contact.unsubscribed_at = timezone.now()
+        contact.save(update_fields=["unsubscribed_at", "updated_at"])
+    live = list(
+        contact.enrollments.filter(status__in=[Enrollment.Status.ACTIVE, Enrollment.Status.PAUSED])
+    )
+    for enrollment in live:
+        enrollment.mark_unsubscribed(payload={"via": "email-link"})
+    if not already and not live:  # record the suppression even with no live enrollment
+        Activity.objects.create(
+            contact=contact,
+            lead=contact.open_lead,
+            type=Activity.Type.UNSUBSCRIBED,
+            payload={"via": "email-link"},
+        )

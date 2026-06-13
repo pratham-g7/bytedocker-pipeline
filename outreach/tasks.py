@@ -25,7 +25,13 @@ from .models import Enrollment, Mailbox, Message
 from .providers import ProviderAuthError, TransientProviderError, get_provider
 from .rendering import contact_context, render_string
 from .replies import is_auto_reply, is_bounce
-from .tracking import open_pixel_tag, wrap_links
+from .tracking import (
+    list_unsubscribe_headers,
+    open_pixel_tag,
+    unsubscribe_footer,
+    unsubscribe_footer_text,
+    wrap_links,
+)
 from .windows import jitter, next_window_open, positive_jitter, window_open, within_send_window
 
 logger = logging.getLogger(__name__)
@@ -150,14 +156,21 @@ def send_step(self, enrollment_id, step_no):
     message.subject_rendered = subject[:300]
     message.save(update_fields=["subject_rendered", "updated_at"])
 
-    # Tracking (ENGINE_SPEC §4): wrap links through the click redirect and append
-    # the open pixel. Done after the empty-body guard so a blank body still fails.
-    # [3.4 seam: + unsubscribe_footer(contact) and List-Unsubscribe headers]
+    # Tracking + compliance (ENGINE_SPEC §4): wrap links through the click redirect,
+    # append the open pixel, then the unsubscribe footer (appended last so its link
+    # is never click-wrapped). Done after the empty-body guard so a blank body fails.
     html = wrap_links(html, message.uuid) + open_pixel_tag(message.uuid)
+    html += unsubscribe_footer(contact)
+    text += unsubscribe_footer_text(contact)
 
     try:
         provider_message_id, thread_id = get_provider(mailbox).send(
-            to=contact.email, subject=subject, html=html, text=text, thread_ref=thread_ref
+            to=contact.email,
+            subject=subject,
+            html=html,
+            text=text,
+            thread_ref=thread_ref,
+            headers=list_unsubscribe_headers(contact),
         )
     except TransientProviderError:
         raise  # autoretry ×3 with backoff; on_failure then applies the §6 contract
