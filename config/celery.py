@@ -27,4 +27,8 @@ app.conf.beat_schedule = {
         "task": "outreach.tasks.refresh_expiring_tokens",
         "schedule": 1800.0,
     },
+    "outreach-poll-replies": {
+        "task": "outreach.tasks.poll_replies",
+        "schedule": 180.0,
+    },
 }

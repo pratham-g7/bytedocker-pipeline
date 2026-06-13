@@ -123,3 +123,8 @@ MS_TENANT = env("MS_TENANT", default="common")
 
 # Outreach guardrails (ENGINE_SPEC §7). Weekday-only sending is the v1 default.
 SEND_WEEKDAYS_ONLY = env.bool("SEND_WEEKDAYS_ONLY", default=True)
+
+# Reply detection (ENGINE_SPEC §3): on a reply, advance the lead's stage to
+# REPLY_STAGE_NAME if it's currently earlier. Toggle off to leave the stage be.
+REPLY_ADVANCES_STAGE = env.bool("REPLY_ADVANCES_STAGE", default=True)
+REPLY_STAGE_NAME = env("REPLY_STAGE_NAME", default="Engaged")

@@ -16,7 +16,7 @@ from urllib.parse import urlencode
 import requests
 from django.conf import settings
 
-from .base import ProviderAuthError, TransientProviderError
+from .base import ParsedMessage, ProviderAuthError, TransientProviderError
 
 GRAPH = "https://graph.microsoft.com/v1.0"
 SCOPES = "offline_access Mail.Send Mail.Read"
@@ -98,46 +98,87 @@ class GraphProvider:
     def __init__(self, mailbox):
         self.mailbox = mailbox
 
-    def send(self, to, subject, html, text, thread_ref=None):
+    def send(self, to, subject, html, text, thread_ref=None, headers=None):
+        # Graph only accepts custom (X-prefixed) internetMessageHeaders; standard
+        # headers like List-Unsubscribe can't be set this way, so they're dropped
+        # for Outlook (the in-body unsubscribe link remains the primary path).
+        custom_headers = [
+            {"name": k, "value": v}
+            for k, v in (headers or {}).items()
+            if k.lower().startswith("x-")
+        ]
+        body = {"subject": subject, "body": {"contentType": "HTML", "content": html}}
+        if custom_headers:
+            body["internetMessageHeaders"] = custom_headers
         if thread_ref:  # steps 2+ reply in-thread (ENGINE_SPEC §1; completed in 2.8)
             draft = self._request("POST", f"/me/messages/{thread_ref['message_id']}/createReply")
-            self._request(
-                "PATCH",
-                f"/me/messages/{draft['id']}",
-                json={"subject": subject, "body": {"contentType": "HTML", "content": html}},
-            )
+            self._request("PATCH", f"/me/messages/{draft['id']}", json=body)
         else:
-            draft = self._request(
-                "POST",
-                "/me/messages",
-                json={
-                    "subject": subject,
-                    "body": {"contentType": "HTML", "content": html},
-                    "toRecipients": [{"emailAddress": {"address": to}}],
-                },
-            )
+            body["toRecipients"] = [{"emailAddress": {"address": to}}]
+            draft = self._request("POST", "/me/messages", json=body)
         self._request("POST", f"/me/messages/{draft['id']}/send")
         return draft["id"], draft.get("conversationId", "")
 
-    def fetch_new_messages(self, cursor):  # reply polling — Phase 3
-        raise NotImplementedError("Reply polling arrives in Phase 3 (ENGINE_SPEC §3).")
+    def fetch_new_messages(self, cursor):
+        """New Inbox messages via delta query (ENGINE_SPEC §3), + the new deltaLink.
+
+        `cursor` is a full Graph deltaLink URL (or empty on the first poll).
+        We page through nextLinks, collecting messages, until Graph hands back
+        the deltaLink to use next time. Cursor advances only after the caller
+        commits, so a crash re-delivers (handlers are idempotent).
+        """
+        select = "id,conversationId,subject,from,bodyPreview,internetMessageHeaders"
+        url = cursor or (
+            f"{GRAPH}/me/mailFolders/inbox/messages/delta?$select={select}"
+        )
+        parsed: list[ParsedMessage] = []
+        new_cursor = cursor
+        while url:
+            page = self._request_url("GET", url)
+            for msg in page.get("value", []):
+                if "@removed" in msg:
+                    continue  # deletions — not relevant to reply matching
+                parsed.append(self._parse_message(msg))
+            if page.get("@odata.nextLink"):
+                url = page["@odata.nextLink"]
+            else:
+                new_cursor = page.get("@odata.deltaLink", cursor)
+                url = None
+        return parsed, new_cursor
+
+    @staticmethod
+    def _parse_message(msg: dict) -> ParsedMessage:
+        headers = {
+            h["name"].lower(): h["value"] for h in msg.get("internetMessageHeaders", [])
+        }
+        return ParsedMessage(
+            provider_message_id=msg.get("id", ""),
+            thread_id=msg.get("conversationId", ""),
+            from_addr=(msg.get("from") or {}).get("emailAddress", {}).get("address", ""),
+            subject=msg.get("subject", ""),
+            snippet=msg.get("bodyPreview", ""),
+            headers=headers,
+        )
 
     def refresh_token(self):
         self._refresh()
 
     # -- internals -------------------------------------------------------
 
-    def _request(self, method, path, json=None, _retried=False):
+    def _request(self, method, path, json=None):
+        return self._request_url(method, GRAPH + path, json=json)
+
+    def _request_url(self, method, url, json=None, _retried=False):
         response = requests.request(
             method,
-            GRAPH + path,
+            url,
             json=json,
             headers={"Authorization": f"Bearer {self._access_token()}"},
             timeout=TIMEOUT,
         )
         if response.status_code == 401 and not _retried:  # stale token — refresh, retry once
             self._refresh()
-            return self._request(method, path, json=json, _retried=True)
+            return self._request_url(method, url, json=json, _retried=True)
         if response.status_code == 429 or response.status_code >= 500:
             raise TransientProviderError(f"Graph returned {response.status_code}")
         response.raise_for_status()

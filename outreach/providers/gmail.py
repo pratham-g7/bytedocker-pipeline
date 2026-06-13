@@ -16,7 +16,7 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from .base import ProviderAuthError, TransientProviderError
+from .base import ParsedMessage, ProviderAuthError, TransientProviderError
 
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.send",
@@ -74,11 +74,13 @@ class GmailProvider:
     def __init__(self, mailbox):
         self.mailbox = mailbox
 
-    def send(self, to, subject, html, text, thread_ref=None):
+    def send(self, to, subject, html, text, thread_ref=None, headers=None):
         message = EmailMessage()
         message["To"] = to
         message["From"] = self.mailbox.email
         message["Subject"] = subject
+        for name, value in (headers or {}).items():  # e.g. List-Unsubscribe (3.4)
+            message[name] = value
         if thread_ref:  # steps 2+ reply in-thread (ENGINE_SPEC §1)
             # Gmail threads on threadId + matching subject + RFC 2822 reply headers.
             # thread_ref carries the API message id; the headers need the original's
@@ -114,8 +116,62 @@ class GmailProvider:
                 return header.get("value")
         return None  # still sent with threadId — Gmail usually threads regardless
 
-    def fetch_new_messages(self, cursor):  # reply polling — Phase 3
-        raise NotImplementedError("Reply polling arrives in Phase 3 (ENGINE_SPEC §3).")
+    def fetch_new_messages(self, cursor):
+        """New INBOX messages since `cursor` (a Gmail historyId), + the new cursor.
+
+        Cursor-safe (ENGINE_SPEC §3): on the first poll there is no baseline
+        historyId, so we record the current one and return nothing — replies
+        only start matching from the next tick. The cursor advances only after
+        the caller commits, so a crash re-delivers (handlers are idempotent).
+        """
+        if not cursor:
+            profile = self._call(
+                lambda service: service.users().getProfile(userId="me").execute()
+            )
+            return [], str(profile["historyId"])
+
+        history = self._call(
+            lambda service: service.users()
+            .history()
+            .list(
+                userId="me",
+                startHistoryId=cursor,
+                historyTypes=["messageAdded"],
+                labelId="INBOX",
+            )
+            .execute()
+        )
+        new_cursor = str(history.get("historyId", cursor))
+        seen, parsed = set(), []
+        for record in history.get("history", []):
+            for added in record.get("messagesAdded", []):
+                msg_id = added["message"]["id"]
+                if msg_id in seen:
+                    continue
+                seen.add(msg_id)
+                if "INBOX" not in added["message"].get("labelIds", []):
+                    continue  # sent/draft echoes carry other labels
+                parsed.append(self._parse_message(msg_id))
+        return parsed, new_cursor
+
+    def _parse_message(self, msg_id: str) -> ParsedMessage:
+        msg = self._call(
+            lambda service: service.users()
+            .messages()
+            .get(userId="me", id=msg_id, format="metadata")
+            .execute()
+        )
+        headers = {
+            h["name"].lower(): h["value"] for h in msg.get("payload", {}).get("headers", [])
+        }
+        return ParsedMessage(
+            provider_message_id=msg_id,
+            thread_id=msg.get("threadId", ""),
+            from_addr=headers.get("from", ""),
+            subject=headers.get("subject", ""),
+            snippet=msg.get("snippet", ""),
+            headers=headers,
+        )
 
     def refresh_token(self):
         self._refresh(self._credentials())

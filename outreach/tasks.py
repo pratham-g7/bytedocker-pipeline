@@ -13,16 +13,18 @@ from zoneinfo import ZoneInfo
 
 from celery import Task as CeleryTask
 from celery import shared_task
+from django.conf import settings
 from django.db import connection, transaction
 from django.db.models import F
 from django.utils import timezone
 
-from pipeline.models import Activity
+from pipeline.models import Activity, Stage
 from pipeline.models import Task as PipelineTask
 
 from .models import Enrollment, Mailbox, Message
 from .providers import ProviderAuthError, TransientProviderError, get_provider
 from .rendering import contact_context, render_string
+from .replies import is_auto_reply, is_bounce
 from .windows import jitter, next_window_open, positive_jitter, window_open, within_send_window
 
 logger = logging.getLogger(__name__)
@@ -255,3 +257,127 @@ def refresh_expiring_tokens(now=None):
         except Exception:
             logger.exception("token refresh failed for mailbox %s", mailbox.pk)
     return refreshed
+
+
+# ---------------------------------------------------------------- reply polling
+
+
+@shared_task
+def poll_replies():
+    """Beat (3 min): fan out one reply-poll task per connected mailbox (ENGINE_SPEC §3)."""
+    queued = 0
+    mailboxes = Mailbox.objects.filter(status=Mailbox.Status.ACTIVE).exclude(oauth_token="")
+    for mailbox_id in mailboxes.values_list("pk", flat=True):
+        poll_mailbox_replies.delay(mailbox_id)
+        queued += 1
+    return queued
+
+
+@shared_task
+def poll_mailbox_replies(mailbox_id):
+    """Pull new inbound, match to a sent thread, classify, and handle (ENGINE_SPEC §3).
+
+    The history cursor advances only after the whole batch is handled, so a
+    crash re-delivers; reply/bounce handlers are idempotent (timestamp/status
+    set once) so replay is safe.
+    """
+    mailbox = Mailbox.objects.get(pk=mailbox_id)
+    try:
+        messages, cursor = get_provider(mailbox).fetch_new_messages(mailbox.history_cursor)
+    except ProviderAuthError:
+        return 0  # provider flagged the mailbox error; owner sees the banner
+
+    handled = 0
+    for parsed in messages:
+        if not parsed.thread_id or mailbox.email.lower() in (parsed.from_addr or "").lower():
+            continue  # our own echo, or no thread to match
+        message = (
+            Message.objects.filter(thread_id=parsed.thread_id)
+            .exclude(thread_id="")
+            .select_related("enrollment__contact", "enrollment__sequence")
+            .order_by("step__order")
+            .first()
+        )
+        if message is None:
+            continue  # not one of our threads
+        if is_bounce(parsed):
+            _handle_bounce(message, parsed)
+        elif is_auto_reply(parsed):
+            _log_auto_reply(message, parsed)
+        else:
+            _handle_reply(message, parsed)
+        handled += 1
+
+    mailbox.history_cursor = cursor or ""
+    mailbox.save(update_fields=["history_cursor", "updated_at"])
+    return handled
+
+
+def _handle_reply(message, parsed):
+    enrollment = message.enrollment
+    if message.replied_at is None:  # first-event-wins (DATA_SPEC §3)
+        message.replied_at = timezone.now()
+        message.save(update_fields=["replied_at", "updated_at"])
+    if enrollment.status not in (Enrollment.Status.ACTIVE, Enrollment.Status.PAUSED):
+        return  # already terminal — idempotent replay
+    enrollment.mark_replied(payload=_inbound_payload(parsed))  # → replied + email_replied Activity
+    _advance_lead_stage(enrollment.contact)
+    _create_reply_task(enrollment)
+
+
+def _handle_bounce(message, parsed):
+    enrollment = message.enrollment
+    if message.status != Message.Status.BOUNCED:
+        message.status = Message.Status.BOUNCED
+        message.save(update_fields=["status", "updated_at"])
+    if enrollment.status not in (Enrollment.Status.ACTIVE, Enrollment.Status.PAUSED):
+        return  # already terminal — idempotent replay
+    enrollment.mark_bounced(payload=_inbound_payload(parsed))  # → bounced + contact.bounced_at
+
+
+def _log_auto_reply(message, parsed):
+    """Auto-replies don't pause the sequence (ENGINE_SPEC §3) — just note them once."""
+    contact = message.enrollment.contact
+    if Activity.objects.filter(
+        contact=contact, type=Activity.Type.NOTE, payload__auto_reply_id=parsed.provider_message_id
+    ).exists():
+        return  # idempotent on replay
+    Activity.objects.create(
+        contact=contact,
+        lead=contact.open_lead,
+        type=Activity.Type.NOTE,
+        payload={
+            "text": f"Auto-reply: {parsed.subject}"[:500],
+            "auto_reply_id": parsed.provider_message_id,
+        },
+    )
+
+
+def _inbound_payload(parsed):
+    return {"snippet": (parsed.snippet or "")[:280], "from": parsed.from_addr}
+
+
+def _advance_lead_stage(contact):
+    """Nudge the lead forward on reply (configurable, default on — ENGINE_SPEC §3)."""
+    if not getattr(settings, "REPLY_ADVANCES_STAGE", True):
+        return
+    lead = contact.open_lead
+    if lead is None:
+        return
+    target = Stage.objects.filter(
+        name__iexact=getattr(settings, "REPLY_STAGE_NAME", "Engaged")
+    ).first()
+    if target and lead.stage.order < target.order:  # only advance, never regress
+        lead.move_to(target)  # logs stage_change + bumps last_activity_at
+
+
+def _create_reply_task(enrollment):
+    lead = enrollment.contact.open_lead
+    if lead is None:
+        return  # pipeline.Task is lead-bound
+    PipelineTask.objects.create(
+        lead=lead,
+        owner=lead.owner or enrollment.enrolled_by,
+        title=f"Reply from {enrollment.contact} — follow up",
+        due_at=timezone.now() + timedelta(days=1),
+    )
