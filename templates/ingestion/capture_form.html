@@ -1,0 +1,36 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ source.name }} — Bytedocker</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="flex min-h-screen items-center justify-center bg-neutral-50 px-6 text-neutral-900 antialiased">
+  <div class="w-full max-w-md">
+    <div class="wordmark mb-6 text-lg text-ink">Bytedocker</div>
+    <div class="card">
+      {% if submitted %}
+        <h1 class="text-base font-semibold">Thanks — we'll be in touch</h1>
+        <p class="mt-2 text-sm text-neutral-500">Your details are in. Someone from the team will reach out shortly.</p>
+      {% else %}
+        <h1 class="text-base font-semibold">{{ source.name }}</h1>
+        <p class="mt-1 mb-4 text-sm text-neutral-500">Tell us how to reach you.</p>
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="mb-1 block text-sm font-medium" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% for error in field.errors %}<p class="mt-1 text-xs text-red-600">{{ error }}</p>{% endfor %}
+            </div>
+          {% endfor %}
+          <button class="btn-primary mt-2 w-full">Submit</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

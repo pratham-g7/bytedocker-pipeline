@@ -1,0 +1,41 @@
+<div class="space-y-3">
+  {% for s in sources %}
+  <div class="card">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-medium">{{ s.name }}</span>
+          {% if s.is_active %}<span class="badge"><span class="badge-dot bg-emerald-500"></span>Active</span>
+          {% else %}<span class="badge"><span class="badge-dot bg-neutral-300"></span>Off</span>{% endif %}
+        </div>
+        <div class="mt-1 text-xs text-neutral-500">
+          Owner {{ s.owner.email }}
+          {% if s.auto_enroll %}· auto-enrolls into <span class="font-medium">{{ s.auto_enroll.name }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    <dl class="mt-3 space-y-2 border-t border-neutral-100 pt-3 text-xs">
+      <div>
+        <dt class="font-semibold uppercase tracking-wide text-neutral-400">Hosted form</dt>
+        <dd class="mt-0.5 break-all font-mono text-neutral-600">{{ base_url }}/forms/{{ s.slug }}/</dd>
+      </div>
+      <div>
+        <dt class="font-semibold uppercase tracking-wide text-neutral-400">Webhook URL</dt>
+        <dd class="mt-0.5 break-all font-mono text-neutral-600">{{ base_url }}/ingest/webhook/{{ s.token }}/</dd>
+      </div>
+      <div>
+        <dt class="font-semibold uppercase tracking-wide text-neutral-400">Signing secret</dt>
+        <dd class="mt-0.5 break-all font-mono text-neutral-600">{{ s.secret }}</dd>
+        <dd class="mt-1 text-neutral-400">
+          Sign the request body with HMAC-SHA256 and send it as
+          <code>X-Bytedocker-Signature</code>.
+        </dd>
+      </div>
+    </dl>
+  </div>
+  {% empty %}
+  <div class="card py-10 text-center text-sm text-neutral-400">
+    No intake sources yet — create one to capture leads from a form or webhook.
+  </div>
+  {% endfor %}
+</div>

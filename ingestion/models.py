@@ -1,3 +1,5 @@
+import secrets
+
 from django.conf import settings
 from django.db import models
 
@@ -41,3 +43,45 @@ class ImportJob(TimeStampedModel):
 
     def __str__(self):
         return f"{self.filename} ({self.status})"
+
+
+class IntakeSource(TimeStampedModel):
+    """A lead capture point usable two ways (DATA_SPEC §5, PLAN §5):
+    a hosted form at /forms/<slug>/ and a signed webhook at /ingest/webhook/<token>/.
+
+    `token` (opaque URL id) and `secret` (HMAC key) are generated on first save.
+    Captured contacts inherit `owner`; if `auto_enroll` + an active `mailbox` are
+    set, new contacts are enrolled immediately.
+    """
+
+    name = models.CharField(max_length=120)
+    slug = models.SlugField(unique=True)
+    token = models.CharField(max_length=64, unique=True, blank=True)
+    secret = models.CharField(max_length=64, blank=True)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="intake_sources"
+    )
+    auto_enroll = models.ForeignKey(
+        "outreach.Sequence", null=True, blank=True, on_delete=models.SET_NULL
+    )
+    mailbox = models.ForeignKey(
+        "outreach.Mailbox", null=True, blank=True, on_delete=models.SET_NULL
+    )
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = secrets.token_urlsafe(24)
+        if not self.secret:
+            self.secret = secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
+
+    def contact_source(self, channel: str) -> str:
+        """Attribution string stored on Contact.source, e.g. 'webhook:landing'."""
+        return f"{channel}:{self.slug}"
+
+    def __str__(self):
+        return self.name

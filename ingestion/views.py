@@ -1,10 +1,21 @@
-from django.http import HttpResponse
+import hashlib
+import hmac
+import json
+
+from django.conf import settings
+from django.contrib.auth.decorators import login_not_required
+from django.http import Http404, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from core.permissions import scope_to_user
+from core.http import hx_toast
+from core.permissions import role_required, scope_to_user
 
-from .models import ImportJob
+from .forms import CaptureForm, IntakeSourceForm
+from .intake import intake_contact
+from .models import ImportJob, IntakeSource
 from .services import TARGET_FIELDS, guess_mapping, parse_preview
 from .tasks import run_import_job
 
@@ -90,3 +101,86 @@ def import_errors(request, pk):
     response = HttpResponse(job.errors_csv, content_type="text/csv")
     response["Content-Disposition"] = f'attachment; filename="import-{job.pk}-errors.csv"'
     return response
+
+
+# ---------------------------------------------------------------- intake (public)
+
+
+@login_not_required
+@csrf_exempt
+@require_POST
+def webhook_intake(request, token):
+    """Signed webhook intake (BACKLOG 3.5): HMAC-SHA256 of the body with the
+    source secret. Bad signature → 403."""
+    source = IntakeSource.objects.filter(token=token, is_active=True).first()
+    if source is None:
+        raise Http404
+    signature = request.headers.get("X-Bytedocker-Signature", "")
+    expected = hmac.new(source.secret.encode(), request.body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected):
+        return HttpResponseForbidden("invalid signature")
+    try:
+        data = json.loads(request.body or b"{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "invalid json"}, status=400)
+    try:
+        contact, created = intake_contact(source, "webhook", data)
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    status = 201 if created else 200
+    return JsonResponse({"ok": True, "created": created, "contact_id": contact.pk}, status=status)
+
+
+@login_not_required
+def capture_form(request, slug):
+    """Hosted lead-capture form at /forms/<slug>/ (BACKLOG 3.5)."""
+    source = IntakeSource.objects.filter(slug=slug, is_active=True).first()
+    if source is None:
+        raise Http404
+    submitted = False
+    form = CaptureForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            intake_contact(source, "form", form.cleaned_data)
+            submitted, form = True, CaptureForm()
+        except ValueError:
+            form.add_error("email", "Please enter a valid email.")
+    return render(
+        request,
+        "ingestion/capture_form.html",
+        {"source": source, "form": form, "submitted": submitted},
+    )
+
+
+# ---------------------------------------------------------------- integrations (admin)
+
+
+@role_required("admin")
+def integrations(request):
+    context = {
+        "sources": IntakeSource.objects.select_related("owner", "auto_enroll", "mailbox"),
+        "base_url": settings.BASE_URL.rstrip("/"),
+    }
+    template = "ingestion/_integrations.html" if request.htmx else "ingestion/integrations.html"
+    return render(request, template, context)
+
+
+@role_required("admin")
+def integration_create(request):
+    if request.method == "POST":
+        form = IntakeSourceForm(request.POST)
+        if form.is_valid():
+            source = form.save(commit=False)
+            source.owner = request.user
+            source.save()
+            return hx_toast(
+                f"Intake source “{source.name}” created.",
+                extra_events={"close-modal": True, "refresh-integrations": True},
+            )
+    else:
+        form = IntakeSourceForm()
+    return render(
+        request,
+        "pipeline/_modal_form.html",
+        {"form": form, "modal_title": "New intake source", "action": reverse("integration-create")},
+    )
