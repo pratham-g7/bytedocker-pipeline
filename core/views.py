@@ -1,12 +1,15 @@
 import json
+from datetime import timedelta
 
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
 from core.permissions import scope_to_user
+from core.reporting import funnel_report, rep_report, sequence_report
 from outreach.models import Enrollment, Mailbox
 from pipeline.models import Activity, Lead, Task
 
@@ -31,6 +34,23 @@ def dashboard(request):
         "now": timezone.now(),
     }
     return render(request, "core/dashboard.html", context)
+
+
+def reports(request):
+    """Funnel, per-sequence, and per-rep reports over a date range (BACKLOG 4.3)."""
+    today = timezone.localdate()
+    to_date = parse_date(request.GET.get("to", "")) or today
+    from_date = parse_date(request.GET.get("from", "")) or today - timedelta(days=30)
+    if from_date > to_date:
+        from_date, to_date = to_date, from_date
+    context = {
+        "from_date": from_date,
+        "to_date": to_date,
+        "funnel": funnel_report(request.user, from_date, to_date),
+        "sequences": sequence_report(request.user, from_date, to_date),
+        "reps": rep_report(request.user, from_date, to_date),
+    }
+    return render(request, "core/reports.html", context)
 
 
 @require_POST

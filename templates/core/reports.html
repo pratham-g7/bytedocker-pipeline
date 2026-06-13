@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block page_title %}Reports{% endblock %}
+{% block content %}
+<form method="get" class="mb-6 flex flex-wrap items-end gap-3">
+  <div>
+    <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-neutral-400" for="from">From</label>
+    <input type="date" id="from" name="from" value="{{ from_date|date:'Y-m-d' }}" class="input w-44">
+  </div>
+  <div>
+    <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-neutral-400" for="to">To</label>
+    <input type="date" id="to" name="to" value="{{ to_date|date:'Y-m-d' }}" class="input w-44">
+  </div>
+  <button class="btn-secondary">Apply</button>
+  <span class="text-xs text-neutral-400">{{ from_date|date:"M j" }} – {{ to_date|date:"M j, Y" }}</span>
+</form>
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+  <!-- Funnel -->
+  <div class="card">
+    <div class="mb-4 flex items-baseline justify-between">
+      <h2 class="text-sm font-semibold">Pipeline funnel</h2>
+      <span class="text-xs text-neutral-400">{{ funnel.total }} lead{{ funnel.total|pluralize }} created</span>
+    </div>
+    <div class="space-y-2.5">
+      {% for s in funnel.stages %}
+      <div>
+        <div class="mb-1 flex justify-between text-xs">
+          <span class="font-medium text-neutral-700">{{ s.name }}</span>
+          <span class="tabular-nums text-neutral-400">{{ s.count }} · {{ s.pct }}%</span>
+        </div>
+        <div class="h-2 w-full rounded bg-neutral-100">
+          <div class="h-2 rounded bg-ink" style="width: {{ s.pct }}%"></div>
+        </div>
+      </div>
+      {% empty %}
+      <p class="py-6 text-center text-sm text-neutral-400">No leads in this range.</p>
+      {% endfor %}
+    </div>
+    {% if funnel.stages %}
+    <div class="mt-4 flex gap-4 border-t border-neutral-100 pt-3 text-xs">
+      <span><span class="badge"><span class="badge-dot bg-emerald-500"></span>Won {{ funnel.won }}</span></span>
+      <span><span class="badge"><span class="badge-dot bg-red-500"></span>Lost {{ funnel.lost }}</span></span>
+      <span class="ml-auto self-center font-medium text-neutral-700">Win rate {{ funnel.win_rate }}%</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Per-rep activity -->
+  <div class="card">
+    <h2 class="mb-4 text-sm font-semibold">Activity by rep</h2>
+    <table class="w-full">
+      <thead class="bg-neutral-50">
+        <tr><th class="th">Rep</th><th class="th text-right">New</th><th class="th text-right">Sent</th><th class="th text-right">Replies</th><th class="th text-right">Tasks</th></tr>
+      </thead>
+      <tbody class="divide-y divide-neutral-100">
+        {% for r in reps %}
+        <tr class="hover:bg-neutral-50">
+          <td class="td">{{ r.name }}</td>
+          <td class="td text-right">{{ r.new_contacts }}</td>
+          <td class="td text-right">{{ r.sent }}</td>
+          <td class="td text-right">{{ r.replies }}</td>
+          <td class="td text-right">{{ r.tasks_done }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="td py-8 text-center text-neutral-400">No activity in this range.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Per-sequence performance -->
+<div class="card mt-6">
+  <div class="mb-4 flex items-baseline justify-between">
+    <h2 class="text-sm font-semibold">Sequence performance</h2>
+    <span class="text-xs text-neutral-400">Opens are approximate (privacy proxies inflate them)</span>
+  </div>
+  <table class="w-full">
+    <thead class="bg-neutral-50">
+      <tr>
+        <th class="th">Sequence</th><th class="th text-right">Sent</th>
+        <th class="th text-right">Open ≈</th><th class="th text-right">Click</th><th class="th text-right">Reply</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-neutral-100">
+      {% for s in sequences %}
+      <tr class="hover:bg-neutral-50">
+        <td class="td font-medium">{{ s.name }}</td>
+        <td class="td text-right">{{ s.sent }}</td>
+        <td class="td text-right text-neutral-500">{{ s.open_rate }}%</td>
+        <td class="td text-right text-neutral-500">{{ s.click_rate }}%</td>
+        <td class="td text-right font-medium text-neutral-800">{{ s.reply_rate }}%</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="td py-8 text-center text-neutral-400">No sends in this range.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

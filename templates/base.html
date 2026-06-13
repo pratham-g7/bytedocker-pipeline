@@ -36,7 +36,7 @@
       <a href="{% url 'sequences' %}" class="nav-link {% nav_active '/sequences/' %}">Sequences</a>
       <a href="{% url 'templates' %}" class="nav-link {% nav_active '/templates/' %}">Templates</a>
       <a href="{% url 'mailboxes' %}" class="nav-link {% nav_active '/settings/mailboxes/' %}">Mailboxes</a>
-      <span class="nav-disabled" title="Arrives in Phase 4">Reports</span>
+      <a href="{% url 'reports' %}" class="nav-link {% nav_active '/reports/' %}">Reports</a>
     </nav>
     <div class="relative z-10 border-t border-white/10 px-3 py-3">
       {% if user.role == "admin" %}

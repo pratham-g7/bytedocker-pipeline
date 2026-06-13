@@ -9,6 +9,7 @@ urlpatterns = [
     path("login/", auth_views.LoginView.as_view(), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("", core_views.dashboard, name="dashboard"),
+    path("reports/", core_views.reports, name="reports"),
     path("demo/toast/", core_views.toast_demo, name="toast-demo"),
     path("", include("pipeline.urls")),
     path("", include("ingestion.urls")),
