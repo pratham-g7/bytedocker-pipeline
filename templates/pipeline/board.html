@@ -29,6 +29,9 @@
       new Sortable(el, {
         group: 'board',
         animation: 150,
+        ghostClass: 'kanban-ghost',
+        chosenClass: 'kanban-chosen',
+        dragClass: 'kanban-drag',
         onEnd: function (e) {
           if (e.to === e.from) return;
           htmx.ajax('POST', '/leads/' + e.item.dataset.leadId + '/move/', {

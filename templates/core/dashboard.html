@@ -3,24 +3,28 @@
 {% block page_title %}Dashboard{% endblock %}
 {% block content %}
 <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-  <div class="card">
+  <div class="group card transition-colors hover:border-neutral-300">
     <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Open leads</div>
-    <div class="mt-2 font-display text-3xl font-bold text-ink">{{ open_leads }}</div>
-    <a href="{% url 'board' %}" class="mt-2 inline-block text-xs text-neutral-400 hover:text-accent">View board →</a>
+    <div class="mt-2 font-display text-3xl font-bold tabular-nums text-ink"
+         x-data="counter({{ open_leads }})" x-text="n">{{ open_leads }}</div>
+    <a href="{% url 'board' %}" class="mt-2 inline-block text-xs text-neutral-400 transition-colors hover:text-accent">View board <span class="nudge">→</span></a>
   </div>
-  <div class="card">
+  <div class="group card transition-colors hover:border-neutral-300">
     <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">In sequence</div>
-    <div class="mt-2 font-display text-3xl font-bold text-ink">{{ active_enrollments }}</div>
-    <a href="{% url 'sequences' %}" class="mt-2 inline-block text-xs text-neutral-400 hover:text-accent">View sequences →</a>
+    <div class="mt-2 font-display text-3xl font-bold tabular-nums text-ink"
+         x-data="counter({{ active_enrollments }})" x-text="n">{{ active_enrollments }}</div>
+    <a href="{% url 'sequences' %}" class="mt-2 inline-block text-xs text-neutral-400 transition-colors hover:text-accent">View sequences <span class="nudge">→</span></a>
   </div>
   <div class="card">
     <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Sends today</div>
-    <div class="mt-2 font-display text-3xl font-bold text-ink">{{ sends_today }}</div>
+    <div class="mt-2 font-display text-3xl font-bold tabular-nums text-ink"
+         x-data="counter({{ sends_today }})" x-text="n">{{ sends_today }}</div>
     <div class="mt-2 text-xs text-neutral-400">of {{ daily_cap }} daily cap</div>
   </div>
   <div class="card">
     <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Replied</div>
-    <div class="mt-2 font-display text-3xl font-bold text-ink">{{ replied }}</div>
+    <div class="mt-2 font-display text-3xl font-bold tabular-nums text-ink"
+         x-data="counter({{ replied }})" x-text="n">{{ replied }}</div>
     <div class="mt-2 text-xs text-neutral-400">reply detection lands in Phase 3</div>
   </div>
 </div>
@@ -44,7 +48,7 @@
       <li class="py-6 text-center text-sm text-neutral-400">Nothing due — enjoy the quiet.</li>
       {% endfor %}
     </ul>
-    <a href="{% url 'tasks' %}" class="link mt-2 inline-block text-xs">All tasks →</a>
+    <a href="{% url 'tasks' %}" class="group link mt-2 inline-block text-xs">All tasks <span class="nudge">→</span></a>
   </div>
 
   <div class="card">
@@ -67,4 +71,26 @@
     </ul>
   </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+  function counter(target) {
+    return {
+      n: 0,
+      init() {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || target <= 0) {
+          this.n = target;
+          return;
+        }
+        const start = performance.now();
+        const tick = (now) => {
+          const p = Math.min((now - start) / 700, 1);
+          this.n = Math.round(target * (1 - Math.pow(1 - p, 3))); // ease-out cubic
+          if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      },
+    };
+  }
+</script>
 {% endblock %}

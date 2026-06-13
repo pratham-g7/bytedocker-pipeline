@@ -56,6 +56,67 @@
 @layer base {
   input[type="checkbox"] {
     accent-color: #2447f0;
+    cursor: pointer;
+  }
+  ::selection {
+    background-color: #dce3fd; /* accent-100 */
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #d4d4d4 transparent;
+  }
+  *::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: #d4d4d4;
+    border-radius: 4px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  /* Table rows ease their hover tint instead of snapping */
+  tbody tr {
+    transition: background-color 120ms ease;
+  }
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
@@ -69,7 +130,7 @@
     @apply w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium transition-[background-color,border-color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 active:translate-y-px;
   }
   .btn-primary {
     @apply btn bg-ink text-white hover:bg-neutral-700;
@@ -77,8 +138,27 @@
   .btn-secondary {
     @apply btn border border-neutral-300 bg-white text-neutral-800 hover:border-neutral-400 hover:bg-neutral-50;
   }
+  /* In-flight: htmx flags the triggering element; show a currentColor spinner
+     (works on both dark and light buttons) and freeze interaction. */
+  .btn.htmx-request {
+    @apply pointer-events-none opacity-80;
+  }
+  .btn.htmx-request::before {
+    content: "";
+    @apply h-3.5 w-3.5 shrink-0 rounded-full border-2 border-current border-r-transparent;
+    animation: spin 0.6s linear infinite;
+  }
+  /* Any other element mid-request (inline action links, filter forms) just dims */
+  .htmx-request:not(.btn) {
+    @apply pointer-events-none opacity-50;
+    cursor: wait;
+  }
   .link {
-    @apply font-medium text-accent hover:underline;
+    @apply font-medium text-accent transition-colors hover:underline;
+  }
+  /* Arrow that nudges forward when its hover-group is hovered */
+  .nudge {
+    @apply inline-block transition-transform duration-150 group-hover:translate-x-0.5;
   }
 
   /* Flat, print-like surfaces: hairline borders, no shadows */
@@ -109,7 +189,7 @@
     @apply px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-neutral-400;
   }
   .td {
-    @apply px-3 py-2.5 text-sm text-neutral-800;
+    @apply px-3 py-2.5 text-sm tabular-nums text-neutral-800;
   }
 
   /* Status badges: white pill, hairline border, colored dot */
@@ -118,5 +198,24 @@
   }
   .badge-dot {
     @apply h-1.5 w-1.5 shrink-0 rounded-full;
+  }
+
+  /* Kanban drag affordances (SortableJS hooks) */
+  .kanban-col li {
+    @apply transition-shadow;
+  }
+  .kanban-ghost {
+    @apply border-dashed border-accent/40 bg-accent-50/40 opacity-60;
+  }
+  .kanban-chosen {
+    @apply cursor-grabbing;
+  }
+  .kanban-drag {
+    @apply rotate-2 shadow-lg;
+  }
+
+  /* Selected rows in bulk-select tables */
+  tr:has(input[name="cid"]:checked) {
+    @apply bg-accent-50;
   }
 }
