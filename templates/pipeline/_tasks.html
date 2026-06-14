@@ -1,49 +1,54 @@
+{% load ui %}
 {% if overdue %}
-<h2 class="mb-2 text-sm font-semibold text-red-600">Overdue</h2>
+<h2 class="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-red-600">
+  {% icon "alert" class="h-3.5 w-3.5" %}Overdue
+</h2>
 <ul class="mb-6 space-y-2">
   {% for task in overdue %}
-  <li class="card flex items-center justify-between gap-3 border-l-4 border-red-400 p-3">
+  <li class="card card-hover flex items-center justify-between gap-3 border-l-[3px] border-l-red-400 p-3.5">
     <div>
-      <div class="text-sm font-medium">{{ task.title }}</div>
-      <div class="text-xs text-neutral-400">
-        <a class="hover:underline" href="{% url 'contact-detail' task.lead.contact_id %}">{{ task.lead.contact.full_name }}</a>
+      <div class="text-sm font-medium text-neutral-900">{{ task.title }}</div>
+      <div class="mt-0.5 text-xs text-neutral-400">
+        <a class="hover:text-accent" href="{% url 'contact-detail' task.lead.contact_id %}">{{ task.lead.contact.full_name }}</a>
         · due {{ task.due_at|date:"M j, H:i" }}
       </div>
     </div>
-    <button hx-post="{% url 'task-toggle' task.pk %}" hx-swap="none" class="btn-secondary shrink-0">Done</button>
+    <button hx-post="{% url 'task-toggle' task.pk %}" hx-swap="none" class="btn-secondary shrink-0">{% icon "check" class="h-4 w-4" %}Done</button>
   </li>
   {% endfor %}
 </ul>
 {% endif %}
 
-<h2 class="mb-2 text-sm font-semibold">Upcoming</h2>
+<h2 class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Upcoming</h2>
 <ul class="mb-6 space-y-2">
   {% for task in upcoming %}
-  <li class="card flex items-center justify-between gap-3 p-3">
+  <li class="card card-hover flex items-center justify-between gap-3 p-3.5">
     <div>
-      <div class="text-sm font-medium">{{ task.title }}</div>
-      <div class="text-xs text-neutral-400">
-        <a class="hover:underline" href="{% url 'contact-detail' task.lead.contact_id %}">{{ task.lead.contact.full_name }}</a>
+      <div class="text-sm font-medium text-neutral-900">{{ task.title }}</div>
+      <div class="mt-0.5 text-xs text-neutral-400">
+        <a class="hover:text-accent" href="{% url 'contact-detail' task.lead.contact_id %}">{{ task.lead.contact.full_name }}</a>
         · due {{ task.due_at|date:"M j, H:i" }}
       </div>
     </div>
-    <button hx-post="{% url 'task-toggle' task.pk %}" hx-swap="none" class="btn-secondary shrink-0">Done</button>
+    <button hx-post="{% url 'task-toggle' task.pk %}" hx-swap="none" class="btn-secondary shrink-0">{% icon "check" class="h-4 w-4" %}Done</button>
   </li>
   {% empty %}
-  <li class="card p-6 text-center text-sm text-neutral-400">Nothing upcoming. Add tasks from a contact page.</li>
+  <li class="card">
+    {% include "_empty_state.html" with icon="check" title="Nothing due" subtitle="You're all caught up. Add tasks from a contact's page." %}
+  </li>
   {% endfor %}
 </ul>
 
 {% if done %}
-<h2 class="mb-2 text-sm font-semibold text-neutral-400">Recently completed</h2>
+<h2 class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Recently completed</h2>
 <ul class="space-y-2">
   {% for task in done %}
-  <li class="card flex items-center justify-between gap-3 p-3 opacity-60">
+  <li class="card flex items-center justify-between gap-3 p-3.5 opacity-70">
     <div>
-      <div class="text-sm line-through">{{ task.title }}</div>
-      <div class="text-xs text-neutral-400">done {{ task.done_at|date:"M j, H:i" }}</div>
+      <div class="text-sm text-neutral-500 line-through">{{ task.title }}</div>
+      <div class="mt-0.5 text-xs text-neutral-400">done {{ task.done_at|date:"M j, H:i" }}</div>
     </div>
-    <button hx-post="{% url 'task-toggle' task.pk %}" hx-swap="none" class="text-xs text-neutral-400 hover:underline">Reopen</button>
+    <button hx-post="{% url 'task-toggle' task.pk %}" hx-swap="none" class="btn-ghost text-xs">Reopen</button>
   </li>
   {% endfor %}
 </ul>

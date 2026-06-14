@@ -1,14 +1,14 @@
 {% load ui %}
 <ul class="space-y-2">
   {% for a in activities %}
-  <li class="card flex gap-3 p-3">
-    <span class="text-lg leading-none">{{ a.type|activity_icon }}</span>
-    <div class="min-w-0">
-      <div class="text-sm">{{ a|activity_text }}</div>
-      <div class="text-xs text-neutral-400">{{ a.ts|date:"M j, Y H:i" }}{% if a.actor %} · {{ a.actor.email }}{% endif %}</div>
+  <li class="card flex items-start gap-3 p-3">
+    <span class="act-icon {{ a.type|activity_tone }}">{% icon a.type|activity_icon_name class="h-4 w-4" %}</span>
+    <div class="min-w-0 pt-0.5">
+      <div class="text-sm text-neutral-800">{{ a|activity_text }}</div>
+      <div class="mt-0.5 text-xs text-neutral-400">{{ a.ts|date:"M j, Y · H:i" }}{% if a.actor %} · {{ a.actor.email }}{% endif %}</div>
     </div>
   </li>
   {% empty %}
-  <li class="card p-6 text-center text-sm text-neutral-400">No activity yet.</li>
+  <li class="card">{% include "_empty_state.html" with icon="reports" title="No activity yet" subtitle="Notes, emails, and stage changes will show up here." %}</li>
   {% endfor %}
 </ul>

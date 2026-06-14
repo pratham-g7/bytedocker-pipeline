@@ -1,24 +1,23 @@
 <div class="flex items-start gap-3 overflow-x-auto pb-4">
   {% for col in columns %}
-  <div class="w-64 shrink-0 rounded-lg bg-neutral-100 p-2.5 {% if col.stage.is_won or col.stage.is_lost %}opacity-75{% endif %}">
-    <div class="mb-2 flex items-center justify-between px-1">
-      <span class="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
+  <div class="w-[270px] shrink-0 rounded-xl border border-neutral-200/70 bg-neutral-100/60 p-2.5 {% if col.stage.is_won or col.stage.is_lost %}opacity-90{% endif %}">
+    <div class="mb-2.5 flex items-center justify-between px-1.5 pt-1">
+      <span class="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-600">
+        <span class="badge-dot {% if col.stage.is_won %}bg-emerald-500{% elif col.stage.is_lost %}bg-red-500{% else %}bg-accent{% endif %}"></span>
         {{ col.stage.name }}
-        {% if col.stage.is_won %}<span class="text-emerald-600">✓</span>{% endif %}
-        {% if col.stage.is_lost %}<span class="text-red-500">✕</span>{% endif %}
       </span>
-      <span class="rounded-full bg-white px-1.5 text-xs font-medium text-neutral-500">{{ col.leads|length }}</span>
+      <span class="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-neutral-500 shadow-xs">{{ col.leads|length }}</span>
     </div>
     <ul class="kanban-col min-h-16 space-y-2" data-stage-id="{{ col.stage.pk }}">
       {% for lead in col.leads %}
       <li data-lead-id="{{ lead.pk }}"
-          class="cursor-grab rounded-md border border-neutral-200 bg-white p-3 transition-colors hover:border-neutral-300">
+          class="cursor-grab rounded-lg border border-neutral-200 bg-white p-3 shadow-xs transition duration-150 hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-card">
         <a href="{% url 'contact-detail' lead.contact_id %}"
-           class="text-sm font-medium hover:underline">{{ lead.contact.full_name }}</a>
+           class="text-sm font-medium text-neutral-900 hover:text-accent">{{ lead.contact.full_name }}</a>
         <div class="truncate text-xs text-neutral-500">{{ lead.contact.company|default:"—" }}</div>
-        <div class="mt-1.5 flex justify-between text-xs text-neutral-400">
-          <span>{% if lead.value %}${{ lead.value|floatformat:0 }}{% endif %}</span>
-          <span>{{ lead.stage_since|timesince }}</span>
+        <div class="mt-2 flex items-center justify-between text-xs">
+          <span class="font-medium text-neutral-700">{% if lead.value %}${{ lead.value|floatformat:0 }}{% endif %}</span>
+          <span class="text-neutral-400">{{ lead.stage_since|timesince }}</span>
         </div>
       </li>
       {% endfor %}

@@ -1,11 +1,13 @@
 {% extends "base.html" %}
+{% load ui %}
 {% block page_title %}Integrations{% endblock %}
 {% block content %}
-<div class="mb-4 flex items-center justify-between gap-4">
-  <p class="text-sm text-neutral-500">Capture leads via a hosted form or a signed webhook.</p>
-  <button hx-get="{% url 'integration-create' %}" hx-target="#modal-slot" class="btn-primary shrink-0">
-    New intake source
-  </button>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Integrations</h1>
+    <p class="page-subtitle">Capture leads via a hosted form or a signed webhook.</p>
+  </div>
+  <button hx-get="{% url 'integration-create' %}" hx-target="#modal-slot" class="btn-primary shrink-0">{% icon "plus" class="h-4 w-4" %}New intake source</button>
 </div>
 <div id="integrations" hx-get="{% url 'integrations' %}" hx-trigger="refresh-integrations from:body">
   {% include "ingestion/_integrations.html" %}

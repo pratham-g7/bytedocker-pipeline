@@ -1,8 +1,9 @@
-<div class="card overflow-hidden p-0">
+{% load ui %}
+<div class="table-card">
   <table class="w-full">
-    <thead class="bg-neutral-50">
+    <thead class="border-b border-neutral-200 bg-neutral-50/70">
       <tr>
-        <th class="th w-8"><input type="checkbox"
+        <th class="th w-10 pr-0"><input type="checkbox"
               onclick="this.closest('table').querySelectorAll('input[name=cid]').forEach(c => c.checked = this.checked)"></th>
         <th class="th">Name</th><th class="th">Email</th><th class="th">Company</th>
         <th class="th">Title</th><th class="th">Owner</th><th class="th">Source</th><th class="th"></th>
@@ -10,21 +11,23 @@
     </thead>
     <tbody class="divide-y divide-neutral-100">
       {% for c in page %}
-      <tr class="hover:bg-neutral-50">
-        <td class="td"><input type="checkbox" name="cid" value="{{ c.pk }}"></td>
-        <td class="td"><a class="font-medium hover:underline" href="{% url 'contact-detail' c.pk %}">{{ c.full_name }}</a></td>
-        <td class="td">{{ c.email }}</td>
-        <td class="td">{% if c.company %}<a class="hover:underline" href="{% url 'company-detail' c.company.pk %}">{{ c.company }}</a>{% else %}—{% endif %}</td>
-        <td class="td">{{ c.title|default:"—" }}</td>
-        <td class="td">{{ c.owner.email|default:"—" }}</td>
-        <td class="td">{{ c.source|default:"—" }}</td>
+      <tr class="group hover:bg-neutral-50">
+        <td class="td pr-0"><input type="checkbox" name="cid" value="{{ c.pk }}"></td>
+        <td class="td"><a class="font-medium text-neutral-900 hover:text-accent" href="{% url 'contact-detail' c.pk %}">{{ c.full_name }}</a></td>
+        <td class="td text-neutral-500">{{ c.email }}</td>
+        <td class="td">{% if c.company %}<a class="text-neutral-700 hover:text-accent" href="{% url 'company-detail' c.company.pk %}">{{ c.company }}</a>{% else %}<span class="text-neutral-300">—</span>{% endif %}</td>
+        <td class="td text-neutral-500">{{ c.title|default:"—" }}</td>
+        <td class="td text-neutral-500">{{ c.owner.email|default:"—" }}</td>
+        <td class="td">{% if c.source %}<span class="badge badge-neutral">{{ c.source }}</span>{% else %}<span class="text-neutral-300">—</span>{% endif %}</td>
         <td class="td text-right">
           <button hx-get="{% url 'contact-edit' c.pk %}" hx-target="#modal-slot"
-                  class="text-sm text-neutral-400 hover:text-neutral-700">Edit</button>
+                  class="btn-ghost opacity-60 transition-opacity group-hover:opacity-100" aria-label="Edit contact">{% icon "pencil" %}</button>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="8" class="td py-10 text-center text-neutral-400">No contacts yet — add one or import a CSV.</td></tr>
+      <tr><td colspan="8" class="p-0">
+        {% include "_empty_state.html" with icon="contacts" title="No contacts yet" subtitle="Add one by hand or import a CSV to get your pipeline moving." cta_url=None %}
+      </td></tr>
       {% endfor %}
     </tbody>
   </table>

@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block page_title %}My tasks{% endblock %}
 {% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">My tasks</h1>
+    <p class="page-subtitle">Your open follow-ups, newest first.</p>
+  </div>
+</div>
 <div id="tasks-wrap" hx-get="{% url 'tasks' %}" hx-trigger="refresh-tasks from:body" class="max-w-3xl">
   {% include "pipeline/_tasks.html" %}
 </div>

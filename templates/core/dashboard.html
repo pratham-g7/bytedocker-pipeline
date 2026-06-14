@@ -2,36 +2,54 @@
 {% load ui %}
 {% block page_title %}Dashboard{% endblock %}
 {% block content %}
-<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-  <div class="group card transition-colors hover:border-neutral-300">
-    <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Open leads</div>
-    <div class="mt-2 font-display text-3xl font-bold tabular-nums text-ink"
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">A snapshot of your pipeline and outreach.</p>
+  </div>
+</div>
+<div class="stagger grid grid-cols-2 gap-4 lg:grid-cols-4">
+  <a href="{% url 'board' %}" class="group card card-hover block">
+    <div class="flex items-start justify-between">
+      <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Open leads</div>
+      <span class="text-neutral-300 transition-colors group-hover:text-accent">{% icon "leads" class="h-4 w-4" %}</span>
+    </div>
+    <div class="mt-3 font-display text-[28px] font-bold leading-none tabular-nums text-ink"
          x-data="counter({{ open_leads }})" x-text="n">{{ open_leads }}</div>
-    <a href="{% url 'board' %}" class="mt-2 inline-block text-xs text-neutral-400 transition-colors hover:text-accent">View board <span class="nudge">→</span></a>
-  </div>
-  <div class="group card transition-colors hover:border-neutral-300">
-    <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">In sequence</div>
-    <div class="mt-2 font-display text-3xl font-bold tabular-nums text-ink"
+    <div class="mt-2 inline-flex items-center gap-1 text-xs text-neutral-400 transition-colors group-hover:text-accent">View board <span class="nudge">→</span></div>
+  </a>
+  <a href="{% url 'sequences' %}" class="group card card-hover block">
+    <div class="flex items-start justify-between">
+      <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">In sequence</div>
+      <span class="text-neutral-300 transition-colors group-hover:text-accent">{% icon "sequences" class="h-4 w-4" %}</span>
+    </div>
+    <div class="mt-3 font-display text-[28px] font-bold leading-none tabular-nums text-ink"
          x-data="counter({{ active_enrollments }})" x-text="n">{{ active_enrollments }}</div>
-    <a href="{% url 'sequences' %}" class="mt-2 inline-block text-xs text-neutral-400 transition-colors hover:text-accent">View sequences <span class="nudge">→</span></a>
-  </div>
+    <div class="mt-2 inline-flex items-center gap-1 text-xs text-neutral-400 transition-colors group-hover:text-accent">View sequences <span class="nudge">→</span></div>
+  </a>
   <div class="card">
-    <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Sends today</div>
-    <div class="mt-2 font-display text-3xl font-bold tabular-nums text-ink"
+    <div class="flex items-start justify-between">
+      <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Sends today</div>
+      <span class="text-neutral-300">{% icon "mailbox" class="h-4 w-4" %}</span>
+    </div>
+    <div class="mt-3 font-display text-[28px] font-bold leading-none tabular-nums text-ink"
          x-data="counter({{ sends_today }})" x-text="n">{{ sends_today }}</div>
     <div class="mt-2 text-xs text-neutral-400">of {{ daily_cap }} daily cap</div>
   </div>
   <div class="card">
-    <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Replied</div>
-    <div class="mt-2 font-display text-3xl font-bold tabular-nums text-ink"
+    <div class="flex items-start justify-between">
+      <div class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Replied</div>
+      <span class="text-neutral-300">{% icon "reply" class="h-4 w-4" %}</span>
+    </div>
+    <div class="mt-3 font-display text-[28px] font-bold leading-none tabular-nums text-ink"
          x-data="counter({{ replied }})" x-text="n">{{ replied }}</div>
-    <div class="mt-2 text-xs text-neutral-400">reply detection lands in Phase 3</div>
+    <div class="mt-2 text-xs text-neutral-400">across active sequences</div>
   </div>
 </div>
 
 <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
   <div class="card">
-    <h2 class="mb-3 text-sm font-semibold">My tasks</h2>
+    <h2 class="mb-3 flex items-center gap-1.5 text-sm font-semibold">{% icon "tasks" class="h-4 w-4 text-neutral-400" %}My tasks</h2>
     <ul class="divide-y divide-neutral-100">
       {% for task in my_tasks %}
       <li class="flex items-center justify-between gap-3 py-2.5 text-sm">
@@ -52,13 +70,13 @@
   </div>
 
   <div class="card">
-    <h2 class="mb-3 text-sm font-semibold">Recent activity</h2>
+    <h2 class="mb-3 flex items-center gap-1.5 text-sm font-semibold">{% icon "reports" class="h-4 w-4 text-neutral-400" %}Recent activity</h2>
     <ul class="divide-y divide-neutral-100">
       {% for a in activities %}
       <li class="flex items-start gap-2.5 py-2.5 text-sm">
-        <span class="mt-0.5 text-xs">{{ a.type|activity_icon }}</span>
-        <div class="min-w-0">
-          <a href="{% url 'contact-detail' a.contact_id %}" class="font-medium hover:underline">{{ a.contact.full_name }}</a>
+        <span class="act-icon {{ a.type|activity_tone }}">{% icon a.type|activity_icon_name class="h-4 w-4" %}</span>
+        <div class="min-w-0 pt-0.5">
+          <a href="{% url 'contact-detail' a.contact_id %}" class="font-medium text-neutral-900 hover:text-accent">{{ a.contact.full_name }}</a>
           <span class="text-neutral-500">— {{ a|activity_text }}</span>
           <div class="text-xs text-neutral-400">{{ a.ts|timesince }} ago</div>
         </div>

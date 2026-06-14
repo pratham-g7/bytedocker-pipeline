@@ -1,0 +1,12 @@
+{% load ui %}
+{# Reusable empty state. Params: icon, title, subtitle?, cta_url?, cta_label?, cta_icon? #}
+<div class="empty-state">
+  <div class="empty-state-icon">{% icon icon|default:"inbox" class="h-6 w-6" %}</div>
+  <p class="text-sm font-semibold text-neutral-700">{{ title }}</p>
+  {% if subtitle %}<p class="max-w-sm text-sm text-neutral-400">{{ subtitle }}</p>{% endif %}
+  {% if cta_url %}
+    <a href="{{ cta_url }}" class="btn-primary mt-4">
+      {% if cta_icon %}{% icon cta_icon class="h-4 w-4" %}{% endif %}{{ cta_label }}
+    </a>
+  {% endif %}
+</div>

@@ -20,6 +20,15 @@ module.exports = {
         sans: ["Inter", "ui-sans-serif", "system-ui", "Segoe UI", "sans-serif"],
         display: ["Montserrat", "Inter", "ui-sans-serif", "sans-serif"],
       },
+      // Restrained depth (Linear-leaning): cool slate-tinted, low-spread.
+      boxShadow: {
+        xs: "0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 1px -1px rgb(15 23 42 / 0.03)",
+        card: "0 6px 20px -6px rgb(15 23 42 / 0.12), 0 2px 6px -2px rgb(15 23 42 / 0.06)",
+        pop: "0 16px 44px -12px rgb(15 23 42 / 0.24), 0 4px 12px -4px rgb(15 23 42 / 0.10)",
+      },
+      transitionTimingFunction: {
+        premium: "cubic-bezier(0.16, 1, 0.3, 1)",
+      },
     },
   },
   plugins: [],

@@ -1,6 +1,13 @@
 {% extends "base.html" %}
+{% load ui %}
 {% block page_title %}Reports{% endblock %}
 {% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Reports</h1>
+    <p class="page-subtitle">Funnel, sequence performance, and rep activity.</p>
+  </div>
+</div>
 <form method="get" class="mb-6 flex flex-wrap items-end gap-3">
   <div>
     <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-neutral-400" for="from">From</label>
@@ -28,8 +35,8 @@
           <span class="font-medium text-neutral-700">{{ s.name }}</span>
           <span class="tabular-nums text-neutral-400">{{ s.count }} · {{ s.pct }}%</span>
         </div>
-        <div class="h-2 w-full rounded bg-neutral-100">
-          <div class="h-2 rounded bg-ink" style="width: {{ s.pct }}%"></div>
+        <div class="h-2.5 w-full overflow-hidden rounded-full bg-neutral-100">
+          <div class="h-2.5 rounded-full bg-gradient-to-r from-accent to-accent-700 transition-[width] duration-500 ease-premium" style="width: {{ s.pct }}%"></div>
         </div>
       </div>
       {% empty %}
@@ -49,7 +56,7 @@
   <div class="card">
     <h2 class="mb-4 text-sm font-semibold">Activity by rep</h2>
     <table class="w-full">
-      <thead class="bg-neutral-50">
+      <thead class="border-b border-neutral-200 bg-neutral-50/70">
         <tr><th class="th">Rep</th><th class="th text-right">New</th><th class="th text-right">Sent</th><th class="th text-right">Replies</th><th class="th text-right">Tasks</th></tr>
       </thead>
       <tbody class="divide-y divide-neutral-100">
@@ -76,7 +83,7 @@
     <span class="text-xs text-neutral-400">Opens are approximate (privacy proxies inflate them)</span>
   </div>
   <table class="w-full">
-    <thead class="bg-neutral-50">
+    <thead class="border-b border-neutral-200 bg-neutral-50/70">
       <tr>
         <th class="th">Sequence</th><th class="th text-right">Sent</th>
         <th class="th text-right">Open ≈</th><th class="th text-right">Click</th><th class="th text-right">Reply</th>

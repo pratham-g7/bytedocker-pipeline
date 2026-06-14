@@ -1,9 +1,16 @@
 {% extends "base.html" %}
+{% load ui %}
 {% block page_title %}Imports{% endblock %}
 {% block content %}
 <div class="max-w-3xl">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Imports</h1>
+      <p class="page-subtitle">Bring contacts in from a CSV or LinkedIn export.</p>
+    </div>
+  </div>
   <div class="card mb-6">
-    <h2 class="mb-3 text-sm font-semibold">Import a CSV</h2>
+    <h2 class="mb-3 flex items-center gap-1.5 text-sm font-semibold">{% icon "imports" class="h-4 w-4 text-neutral-400" %}Import a CSV</h2>
     {% if upload_error %}<p class="mb-2 text-sm text-red-600">{{ upload_error }}</p>{% endif %}
     <form method="post" action="{% url 'import-upload' %}" enctype="multipart/form-data"
           class="flex flex-wrap items-center gap-2">
@@ -17,9 +24,9 @@
   </div>
 
   <h2 class="mb-2 text-sm font-semibold">History</h2>
-  <div class="card overflow-hidden p-0">
+  <div class="table-card">
     <table class="w-full">
-      <thead class="bg-neutral-50">
+      <thead class="border-b border-neutral-200 bg-neutral-50/70">
         <tr><th class="th">File</th><th class="th">Status</th><th class="th">Created</th>
             <th class="th">Updated</th><th class="th">Skipped</th><th class="th">Errors</th><th class="th">When</th></tr>
       </thead>
@@ -27,7 +34,9 @@
         {% for job in jobs %}
         <tr class="hover:bg-neutral-50">
           <td class="td"><a class="font-medium hover:underline" href="{% url 'import-detail' job.pk %}">{{ job.filename }}</a></td>
-          <td class="td">{{ job.get_status_display }}</td>
+          <td class="td">
+            <span class="badge {% if job.status == 'done' %}badge-emerald{% elif job.status == 'failed' %}badge-red{% else %}badge-accent{% endif %}">{{ job.get_status_display }}</span>
+          </td>
           <td class="td">{{ job.created_contacts }}</td>
           <td class="td">{{ job.updated_contacts }}</td>
           <td class="td">{{ job.skipped }}</td>
@@ -35,7 +44,7 @@
           <td class="td text-neutral-400">{{ job.created_at|date:"M j, H:i" }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="7" class="td py-8 text-center text-neutral-400">No imports yet.</td></tr>
+        <tr><td colspan="7" class="p-0">{% include "_empty_state.html" with icon="imports" title="No imports yet" subtitle="Upload a CSV above to get started." %}</td></tr>
         {% endfor %}
       </tbody>
     </table>

@@ -1,25 +1,28 @@
-<div class="card overflow-hidden p-0">
+{% load ui %}
+<div class="table-card">
   <table class="w-full">
-    <thead class="bg-neutral-50">
+    <thead class="border-b border-neutral-200 bg-neutral-50/70">
       <tr>
         <th class="th">Name</th><th class="th">Domain</th><th class="th">Industry</th>
-        <th class="th">Contacts</th><th class="th"></th>
+        <th class="th text-right">Contacts</th><th class="th"></th>
       </tr>
     </thead>
     <tbody class="divide-y divide-neutral-100">
       {% for company in page %}
-      <tr class="hover:bg-neutral-50">
-        <td class="td"><a class="font-medium hover:underline" href="{% url 'company-detail' company.pk %}">{{ company.name }}</a></td>
-        <td class="td">{{ company.domain|default:"—" }}</td>
-        <td class="td">{{ company.industry|default:"—" }}</td>
-        <td class="td">{{ company.num_contacts }}</td>
+      <tr class="group hover:bg-neutral-50">
+        <td class="td"><a class="font-medium text-neutral-900 hover:text-accent" href="{% url 'company-detail' company.pk %}">{{ company.name }}</a></td>
+        <td class="td text-neutral-500">{{ company.domain|default:"—" }}</td>
+        <td class="td text-neutral-500">{{ company.industry|default:"—" }}</td>
+        <td class="td text-right">{{ company.num_contacts }}</td>
         <td class="td text-right">
           <button hx-get="{% url 'company-edit' company.pk %}" hx-target="#modal-slot"
-                  class="text-sm text-neutral-400 hover:text-neutral-700">Edit</button>
+                  class="btn-ghost opacity-60 transition-opacity group-hover:opacity-100" aria-label="Edit company">{% icon "pencil" %}</button>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="5" class="td py-10 text-center text-neutral-400">No companies yet.</td></tr>
+      <tr><td colspan="5" class="p-0">
+        {% include "_empty_state.html" with icon="companies" title="No companies yet" subtitle="Companies are created automatically as you add or import contacts." %}
+      </td></tr>
       {% endfor %}
     </tbody>
   </table>

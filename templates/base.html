@@ -17,57 +17,66 @@
 <div class="flex min-h-screen">
 
   <aside class="relative flex w-60 flex-col overflow-hidden bg-ink">
+    <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"></div>
     <div class="px-6 pb-2 pt-7">
-      <div class="wordmark text-[15px] leading-none text-white">Bytedocker</div>
-      <div class="mt-1.5 text-[10px] font-medium uppercase tracking-[0.3em] text-neutral-500">Pipeline</div>
+      <div class="flex items-center gap-2">
+        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-[13px] font-extrabold text-white">B</div>
+        <div>
+          <div class="wordmark text-[13px] leading-none text-white">Bytedocker</div>
+          <div class="mt-1 text-[9px] font-medium uppercase tracking-[0.28em] text-neutral-500">Pipeline</div>
+        </div>
+      </div>
     </div>
-    <nav class="relative z-10 flex-1 px-3 pt-4">
-      <a href="{% url 'dashboard' %}" class="nav-link {% nav_active '/' %}">Dashboard</a>
+    <nav class="relative z-10 flex-1 overflow-y-auto px-3 pt-4">
+      <a href="{% url 'dashboard' %}" class="nav-link {% nav_active '/' %}">{% icon "dashboard" %}Dashboard</a>
 
       <div class="nav-section">Pipeline</div>
-      <a href="{% url 'board' %}" class="nav-link {% nav_active '/board/' %}">Board</a>
-      <a href="{% url 'leads' %}" class="nav-link {% nav_active '/leads/' %}">Leads</a>
-      <a href="{% url 'contacts' %}" class="nav-link {% nav_active '/contacts/' %}">Contacts</a>
-      <a href="{% url 'companies' %}" class="nav-link {% nav_active '/companies/' %}">Companies</a>
-      <a href="{% url 'tasks' %}" class="nav-link {% nav_active '/tasks/' %}">Tasks</a>
-      <a href="{% url 'imports' %}" class="nav-link {% nav_active '/imports/' %}">Imports</a>
-      <a href="{% url 'enrichment-queue' %}" class="nav-link {% nav_active '/enrichment/' %}">Enrichment</a>
+      <a href="{% url 'board' %}" class="nav-link {% nav_active '/board/' %}">{% icon "board" %}Board</a>
+      <a href="{% url 'leads' %}" class="nav-link {% nav_active '/leads/' %}">{% icon "leads" %}Leads</a>
+      <a href="{% url 'contacts' %}" class="nav-link {% nav_active '/contacts/' %}">{% icon "contacts" %}Contacts</a>
+      <a href="{% url 'companies' %}" class="nav-link {% nav_active '/companies/' %}">{% icon "companies" %}Companies</a>
+      <a href="{% url 'tasks' %}" class="nav-link {% nav_active '/tasks/' %}">{% icon "tasks" %}Tasks</a>
+      <a href="{% url 'imports' %}" class="nav-link {% nav_active '/imports/' %}">{% icon "imports" %}Imports</a>
+      <a href="{% url 'enrichment-queue' %}" class="nav-link {% nav_active '/enrichment/' %}">{% icon "enrich" %}Enrichment</a>
 
       <div class="nav-section">Outreach</div>
-      <a href="{% url 'sequences' %}" class="nav-link {% nav_active '/sequences/' %}">Sequences</a>
-      <a href="{% url 'templates' %}" class="nav-link {% nav_active '/templates/' %}">Templates</a>
-      <a href="{% url 'mailboxes' %}" class="nav-link {% nav_active '/settings/mailboxes/' %}">Mailboxes</a>
-      <a href="{% url 'reports' %}" class="nav-link {% nav_active '/reports/' %}">Reports</a>
+      <a href="{% url 'sequences' %}" class="nav-link {% nav_active '/sequences/' %}">{% icon "sequences" %}Sequences</a>
+      <a href="{% url 'templates' %}" class="nav-link {% nav_active '/templates/' %}">{% icon "templates" %}Templates</a>
+      <a href="{% url 'mailboxes' %}" class="nav-link {% nav_active '/settings/mailboxes/' %}">{% icon "mailbox" %}Mailboxes</a>
+      <a href="{% url 'reports' %}" class="nav-link {% nav_active '/reports/' %}">{% icon "reports" %}Reports</a>
     </nav>
     <div class="relative z-10 border-t border-white/10 px-3 py-3">
       {% if user.role == "admin" %}
-        <a href="{% url 'integrations' %}" class="nav-link {% nav_active '/settings/integrations/' %}">Integrations</a>
-        <a href="{% url 'duplicates' %}" class="nav-link {% nav_active '/settings/duplicates/' %}">Duplicate companies</a>
-        <a href="{% url 'stages-settings' %}" class="nav-link {% nav_active '/settings/stages/' %}">Stage settings</a>
+        <a href="{% url 'integrations' %}" class="nav-link {% nav_active '/settings/integrations/' %}">{% icon "integrations" %}Integrations</a>
+        <a href="{% url 'duplicates' %}" class="nav-link {% nav_active '/settings/duplicates/' %}">{% icon "merge" %}Duplicate companies</a>
+        <a href="{% url 'stages-settings' %}" class="nav-link {% nav_active '/settings/stages/' %}">{% icon "settings" %}Stage settings</a>
       {% endif %}
       {% if user.is_staff %}
-        <a href="{% url 'admin:index' %}" class="nav-link">Admin</a>
+        <a href="{% url 'admin:index' %}" class="nav-link">{% icon "external" %}Admin</a>
       {% endif %}
     </div>
-    {% include "_constellation.html" with class="pointer-events-none absolute -bottom-10 -left-16 w-64 rotate-180 text-white/[0.07]" %}
+    {% include "_constellation.html" with class="pointer-events-none absolute -bottom-10 -left-16 w-64 rotate-180 text-white/[0.06]" %}
   </aside>
 
   <div class="flex min-w-0 flex-1 flex-col">
-    <header class="flex items-center justify-between border-b border-neutral-200 bg-white px-6 py-3">
+    <header class="sticky top-0 z-20 flex items-center justify-between border-b border-neutral-200 bg-white/85 px-6 py-2.5 backdrop-blur-md">
       <div class="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">
         {% block page_title %}{% endblock %}
       </div>
-      <div class="flex items-center gap-4 text-sm">
-        <span class="text-neutral-500">{{ user.email }}</span>
+      <div class="flex items-center gap-2 text-sm">
+        <div class="flex items-center gap-2 rounded-full border border-neutral-200 bg-white py-0.5 pl-0.5 pr-3 shadow-xs">
+          <div class="flex h-7 w-7 items-center justify-center rounded-full bg-ink text-xs font-semibold text-white">{{ user.email|first|upper }}</div>
+          <span class="text-[13px] text-neutral-600">{{ user.email }}</span>
+        </div>
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
-          <button class="btn-secondary px-2.5 py-1 text-xs">Log out</button>
+          <button class="btn-ghost h-8 w-8 p-0" title="Log out" aria-label="Log out">{% icon "logout" class="h-4 w-4" %}</button>
         </form>
       </div>
     </header>
     {% if error_mailboxes %}
     <div class="flex items-center gap-2 border-b border-red-200 bg-red-50 px-6 py-2 text-sm text-red-800">
-      <span class="badge-dot bg-red-500"></span>
+      {% icon "alert" class="h-4 w-4 shrink-0 text-red-500" %}
       <span>
         {% for m in error_mailboxes %}{{ m.email }}{% if not forloop.last %}, {% endif %}{% endfor %}
         lost its connection — sequence sends are paused for it.
@@ -77,6 +86,11 @@
     {% endif %}
     <main class="flex-1 p-6 motion-safe:animate-[rise-in_240ms_ease-out]">{% block content %}{% endblock %}</main>
   </div>
+</div>
+
+<!-- Premium top loading bar — shows while any htmx request is in flight -->
+<div id="htmx-progress" class="htmx-progress pointer-events-none fixed inset-x-0 top-0 z-[60] h-[2px]">
+  <div class="htmx-progress-bar absolute h-full rounded-full bg-accent"></div>
 </div>
 
 <div id="modal-slot"></div>
@@ -107,7 +121,7 @@
          x-transition:leave="transition ease-in duration-200"
          x-transition:leave-start="opacity-100 translate-x-0"
          x-transition:leave-end="opacity-0 translate-x-5"
-         class="flex max-w-sm items-center gap-2.5 rounded-lg bg-ink px-4 py-3 text-sm text-white shadow-lg">
+         class="flex max-w-sm items-center gap-2.5 rounded-xl bg-ink px-4 py-3 text-sm text-white shadow-pop ring-1 ring-white/10">
       <span class="badge-dot" :class="t.level === 'error' ? 'bg-red-400' : 'bg-emerald-400'"></span>
       <span x-text="t.msg"></span>
     </div>
@@ -118,6 +132,12 @@
   document.addEventListener('close-modal', function () {
     document.getElementById('modal-slot').innerHTML = '';
   });
+  // Top loading bar: count in-flight htmx requests so concurrent ones don't flicker.
+  (function () {
+    var bar = document.getElementById('htmx-progress'), n = 0;
+    document.body.addEventListener('htmx:beforeRequest', function () { n++; bar.classList.add('active'); });
+    document.body.addEventListener('htmx:afterRequest', function () { n = Math.max(0, n - 1); if (!n) bar.classList.remove('active'); });
+  })();
 </script>
 {% block extra_js %}{% endblock %}
 </body>

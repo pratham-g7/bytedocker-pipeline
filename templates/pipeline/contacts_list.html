@@ -1,36 +1,40 @@
 {% extends "base.html" %}
+{% load ui %}
 {% block page_title %}Contacts{% endblock %}
 {% block content %}
-<div class="mb-4 flex items-center justify-between gap-4">
-  <form hx-get="{% url 'contacts' %}" hx-target="#contacts-table" hx-push-url="true"
-        hx-trigger="submit, change, refresh-contacts from:body" class="flex gap-2">
-    <input name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search name, email, company…"
-           class="input w-64">
-    {% if owners %}
-      <select name="owner" class="input w-44">
-        <option value="">All owners</option>
-        {% for o in owners %}
-          <option value="{{ o.pk }}" {% if request.GET.owner == o.pk|stringformat:"s" %}selected{% endif %}>{{ o.email }}</option>
-        {% endfor %}
-      </select>
-    {% endif %}
-    <select name="source" class="input w-44">
-      <option value="">All sources</option>
-      {% for s in sources %}
-        <option {% if request.GET.source == s %}selected{% endif %}>{{ s }}</option>
-      {% endfor %}
-    </select>
-    <button class="btn-secondary">Filter</button>
-  </form>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Contacts</h1>
+    <p class="page-subtitle">Everyone in your pipeline.</p>
+  </div>
   <div class="flex shrink-0 gap-2">
     <button hx-get="{% url 'enroll-modal' %}" hx-include="input[name='cid']:checked"
-            hx-target="#modal-slot" class="btn-secondary">
-      Enroll selected
-    </button>
-    <button hx-get="{% url 'contact-create' %}" hx-target="#modal-slot" class="btn-primary">
-      New contact
-    </button>
+            hx-target="#modal-slot" class="btn-secondary">{% icon "sequences" class="h-4 w-4" %}Enroll selected</button>
+    <button hx-get="{% url 'contact-create' %}" hx-target="#modal-slot" class="btn-primary">{% icon "plus" class="h-4 w-4" %}New contact</button>
   </div>
 </div>
+<form hx-get="{% url 'contacts' %}" hx-target="#contacts-table" hx-push-url="true"
+      hx-trigger="submit, change, refresh-contacts from:body" class="mb-4 flex flex-wrap gap-2">
+  <div class="relative">
+    <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">{% icon "search" class="h-4 w-4" %}</span>
+    <input name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search name, email, company…"
+           class="input w-72 pl-9">
+  </div>
+  {% if owners %}
+    <select name="owner" class="input w-44">
+      <option value="">All owners</option>
+      {% for o in owners %}
+        <option value="{{ o.pk }}" {% if request.GET.owner == o.pk|stringformat:"s" %}selected{% endif %}>{{ o.email }}</option>
+      {% endfor %}
+    </select>
+  {% endif %}
+  <select name="source" class="input w-44">
+    <option value="">All sources</option>
+    {% for s in sources %}
+      <option {% if request.GET.source == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn-secondary">{% icon "filter" class="h-4 w-4" %}Filter</button>
+</form>
 <div id="contacts-table">{% include "pipeline/_contacts_table.html" %}</div>
 {% endblock %}

@@ -1,7 +1,7 @@
 {% if error %}
   <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{{ error }}</div>
 {% else %}
-  <div class="card overflow-hidden p-0">
+  <div class="table-card">
     <div class="border-b border-neutral-100 bg-neutral-50 px-4 py-3">
       <div class="text-xs uppercase tracking-wide text-neutral-400">Subject</div>
       <div class="text-sm font-medium">{{ subject|default:"(empty subject)" }}</div>

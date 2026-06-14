@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block page_title %}Enrichment queue{% endblock %}
 {% block content %}
-<div class="mb-4">
-  <p class="text-sm text-neutral-500">
-    Leads that arrived without an email (e.g. LinkedIn exports). Resolve looks up an email via the
-    enrichment provider and creates a contact.
-  </p>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Enrichment queue</h1>
+    <p class="page-subtitle max-w-xl">Leads that arrived without an email (e.g. LinkedIn exports). Resolve looks up an email via the provider and creates a contact.</p>
+  </div>
 </div>
 <div id="enrichment" hx-get="{% url 'enrichment-queue' %}" hx-trigger="refresh-enrichment from:body">
   {% include "ingestion/_enrichment_queue.html" %}

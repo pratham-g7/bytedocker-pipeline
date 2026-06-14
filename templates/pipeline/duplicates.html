@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block page_title %}Duplicate companies{% endblock %}
 {% block content %}
-<div class="mb-4">
-  <p class="text-sm text-neutral-500">
-    Companies that look like the same account. Merging moves all contacts onto the one you keep
-    and deletes the rest — this can't be undone.
-  </p>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Duplicate companies</h1>
+    <p class="page-subtitle max-w-xl">Companies that look like the same account. Merging moves all contacts onto the one you keep and deletes the rest — this can't be undone.</p>
+  </div>
 </div>
 <div id="duplicates" hx-get="{% url 'duplicates' %}" hx-trigger="refresh-duplicates from:body">
   {% include "pipeline/_duplicates.html" %}

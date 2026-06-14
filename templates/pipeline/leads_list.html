@@ -1,6 +1,13 @@
 {% extends "base.html" %}
+{% load ui %}
 {% block page_title %}Leads{% endblock %}
 {% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Leads</h1>
+    <p class="page-subtitle">Deals moving through your pipeline.</p>
+  </div>
+</div>
 <div class="mb-4">
   <form hx-get="{% url 'leads' %}" hx-target="#leads-table" hx-push-url="true"
         hx-trigger="submit, change" class="flex flex-wrap gap-2">
