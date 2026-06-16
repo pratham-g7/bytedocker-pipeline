@@ -24,9 +24,8 @@
 <script>
   function initBoard(root) {
     (root || document).querySelectorAll('.kanban-col').forEach(function (el) {
-      if (el.dataset.sortable) return;
-      el.dataset.sortable = '1';
-      new Sortable(el, {
+      if (el._sortable) return;  // already wired
+      el._sortable = new Sortable(el, {
         group: 'board',
         animation: 150,
         ghostClass: 'kanban-ghost',
@@ -43,9 +42,12 @@
       });
     });
   }
-  document.addEventListener('DOMContentLoaded', function () {
-    initBoard(document);
-    htmx.onLoad(initBoard);
-  });
+  // After a card move the board refreshes itself via htmx; the new columns need
+  // Sortable re-wired or every drag after the first is dead. htmx fires htmx:load
+  // (a bubbling DOM event) on each swapped-in fragment, so listen for it directly.
+  // NOTE: do NOT use htmx.onLoad here — registered at DOMContentLoaded it can no-op
+  // if htmx isn't ready yet, which is exactly what broke repeated drags.
+  document.addEventListener('htmx:load', function (e) { initBoard(e.target); });
+  document.addEventListener('DOMContentLoaded', function () { initBoard(document); });
 </script>
 {% endblock %}
