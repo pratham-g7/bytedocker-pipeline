@@ -125,9 +125,7 @@ class GmailProvider:
         the caller commits, so a crash re-delivers (handlers are idempotent).
         """
         if not cursor:
-            profile = self._call(
-                lambda service: service.users().getProfile(userId="me").execute()
-            )
+            profile = self._call(lambda service: service.users().getProfile(userId="me").execute())
             return [], str(profile["historyId"])
 
         history = self._call(
@@ -161,9 +159,7 @@ class GmailProvider:
             .get(userId="me", id=msg_id, format="metadata")
             .execute()
         )
-        headers = {
-            h["name"].lower(): h["value"] for h in msg.get("payload", {}).get("headers", [])
-        }
+        headers = {h["name"].lower(): h["value"] for h in msg.get("payload", {}).get("headers", [])}
         return ParsedMessage(
             provider_message_id=msg_id,
             thread_id=msg.get("threadId", ""),

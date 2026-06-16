@@ -128,9 +128,7 @@ class GraphProvider:
         commits, so a crash re-delivers (handlers are idempotent).
         """
         select = "id,conversationId,subject,from,bodyPreview,internetMessageHeaders"
-        url = cursor or (
-            f"{GRAPH}/me/mailFolders/inbox/messages/delta?$select={select}"
-        )
+        url = cursor or (f"{GRAPH}/me/mailFolders/inbox/messages/delta?$select={select}")
         parsed: list[ParsedMessage] = []
         new_cursor = cursor
         while url:
@@ -148,9 +146,7 @@ class GraphProvider:
 
     @staticmethod
     def _parse_message(msg: dict) -> ParsedMessage:
-        headers = {
-            h["name"].lower(): h["value"] for h in msg.get("internetMessageHeaders", [])
-        }
+        headers = {h["name"].lower(): h["value"] for h in msg.get("internetMessageHeaders", [])}
         return ParsedMessage(
             provider_message_id=msg.get("id", ""),
             thread_id=msg.get("conversationId", ""),

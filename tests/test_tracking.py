@@ -55,9 +55,12 @@ def test_open_sets_timestamp_and_logs_once(client):
     message.refresh_from_db()
     opened = message.opened_at
     assert opened is not None
-    assert Activity.objects.filter(
-        contact=message.enrollment.contact, type=Activity.Type.EMAIL_OPENED
-    ).count() == 1
+    assert (
+        Activity.objects.filter(
+            contact=message.enrollment.contact, type=Activity.Type.EMAIL_OPENED
+        ).count()
+        == 1
+    )
 
     client.get(url)  # re-open (MPP proxies fire repeatedly)
     message.refresh_from_db()

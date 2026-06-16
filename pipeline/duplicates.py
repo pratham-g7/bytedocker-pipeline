@@ -16,8 +16,25 @@ from .models import Activity, Company
 
 # Legal suffixes stripped when computing a name core.
 LEGAL_SUFFIXES = {
-    "inc", "incorporated", "llc", "ltd", "limited", "co", "corp", "corporation",
-    "gmbh", "plc", "pvt", "private", "pte", "sa", "ag", "bv", "oy", "ab", "srl",
+    "inc",
+    "incorporated",
+    "llc",
+    "ltd",
+    "limited",
+    "co",
+    "corp",
+    "corporation",
+    "gmbh",
+    "plc",
+    "pvt",
+    "private",
+    "pte",
+    "sa",
+    "ag",
+    "bv",
+    "oy",
+    "ab",
+    "srl",
 }
 FILLABLE_FIELDS = ("domain", "industry", "size", "location")
 
