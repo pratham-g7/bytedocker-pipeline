@@ -207,7 +207,7 @@ def mailbox_test_send(request, pk):
         provider.send(
             to=mailbox.email,
             subject="Bytedocker test send",
-            html="<p>Your mailbox is connected and can send. 🐳</p>",
+            html="<p>Your mailbox is connected and can send.</p>",
             text="Your mailbox is connected and can send.",
         )
     except Exception as exc:

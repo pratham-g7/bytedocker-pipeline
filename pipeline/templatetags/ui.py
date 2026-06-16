@@ -20,27 +20,6 @@ def icon(name, **attrs):
     )
 
 
-ACTIVITY_ICONS = {
-    "email_sent": "✉️",
-    "email_opened": "👀",
-    "email_clicked": "🔗",
-    "email_replied": "📨",
-    "email_bounced": "⚠️",
-    "note": "📝",
-    "call": "📞",
-    "stage_change": "🔁",
-    "task_done": "✅",
-    "enrolled": "➕",
-    "unsubscribed": "🚫",
-    "import": "📥",
-}
-
-
-@register.filter
-def activity_icon(activity_type):
-    return ACTIVITY_ICONS.get(activity_type, "•")
-
-
 # Line-icon sprite names + tone classes for the activity feed (presentation only).
 ACTIVITY_ICON_NAMES = {
     "email_sent": "mailbox",
